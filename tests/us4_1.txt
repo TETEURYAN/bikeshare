@@ -1,0 +1,11 @@
+#####################################################################################
+# User Story 4 - Remocao de usuario (teste de persistencia)
+#####################################################################################
+
+expectError "Usuario nao existe." getAtributoUsuario usuario=U1 atributo=nome
+expectError "Usuario nao existe." getAtributoUsuario usuario=U2 atributo=nome
+expect "Fernanda Melo" getAtributoUsuario usuario=U3 atributo=nome
+expect ativo getAtributoUsuario usuario=U3 atributo=estado
+
+encerrarSistema
+quit

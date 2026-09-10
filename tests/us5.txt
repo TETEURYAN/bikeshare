@@ -1,0 +1,31 @@
+#####################################################################################
+# User Story 5 - Cadastro de estacao
+#####################################################################################
+
+zerarSistema
+
+id1=criarEstacao nome="Estacao Central" endereco="Praca da Se, 1" capacidade=10
+expect 10 getVagasDisponiveis estacao=${id1}
+expect 0 getBicicletasDisponiveis estacao=${id1}
+
+id2=criarEstacao nome="Estacao Sul" endereco="Av. Sul, 500" capacidade=5
+expectDifferent ${id1} echo ${id2}
+expect 5 getVagasDisponiveis estacao=${id2}
+
+# erros de validacao
+expectError "Nome nao pode ser nulo." criarEstacao nome="" endereco="Rua X, 1" capacidade=5
+expectError "Endereco nao pode ser nulo." criarEstacao nome="Estacao Y" endereco="" capacidade=5
+expectError "Capacidade nao pode ser nula." criarEstacao nome="Estacao Y" endereco="Rua X, 1" capacidade=""
+expectError "Capacidade deve ser numerica." criarEstacao nome="Estacao Y" endereco="Rua X, 1" capacidade=abc
+expectError "Capacidade deve ser numerica." criarEstacao nome="Estacao Y" endereco="Rua X, 1" capacidade=2,5
+expectError "Capacidade deve ser positiva." criarEstacao nome="Estacao Y" endereco="Rua X, 1" capacidade=0
+expectError "Capacidade deve ser positiva." criarEstacao nome="Estacao Y" endereco="Rua X, 1" capacidade=-3
+
+# erros de consulta de disponibilidade
+expectError "Identificacao da estacao nao pode ser nula." getVagasDisponiveis estacao=""
+expectError "Estacao nao existe." getVagasDisponiveis estacao=E999
+expectError "Identificacao da estacao nao pode ser nula." getBicicletasDisponiveis estacao=""
+expectError "Estacao nao existe." getBicicletasDisponiveis estacao=E999
+
+encerrarSistema
+quit

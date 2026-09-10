@@ -1,0 +1,47 @@
+#####################################################################################
+# User Story 12 - Criacao de novos planos de tarifacao
+#####################################################################################
+
+zerarSistema
+
+plano1=criarPlano nome=premium franquiaMinutos=30 valorMinutoExcedente=0,40 mensalidade=60
+expect premium echo ${plano1}
+
+# ---- erros de validacao ----
+expectError "Nome do plano nao pode ser nulo." criarPlano nome="" franquiaMinutos=30 valorMinutoExcedente=0,40 mensalidade=60
+expectError "Plano ja existe." criarPlano nome=avulso franquiaMinutos=30 valorMinutoExcedente=0,40 mensalidade=60
+expectError "Plano ja existe." criarPlano nome=assinante franquiaMinutos=30 valorMinutoExcedente=0,40 mensalidade=60
+expectError "Plano ja existe." criarPlano nome=premium franquiaMinutos=10 valorMinutoExcedente=0,10 mensalidade=10
+expectError "Franquia nao pode ser nula." criarPlano nome=basico franquiaMinutos="" valorMinutoExcedente=0,40 mensalidade=60
+expectError "Franquia deve ser numerica." criarPlano nome=basico franquiaMinutos=abc valorMinutoExcedente=0,40 mensalidade=60
+expectError "Franquia deve ser nao-negativa." criarPlano nome=basico franquiaMinutos=-5 valorMinutoExcedente=0,40 mensalidade=60
+expectError "Valor do minuto excedente nao pode ser nulo." criarPlano nome=basico franquiaMinutos=30 valorMinutoExcedente="" mensalidade=60
+expectError "Valor do minuto excedente deve ser numerico." criarPlano nome=basico franquiaMinutos=30 valorMinutoExcedente=abc mensalidade=60
+expectError "Valor do minuto excedente deve ser nao-negativo." criarPlano nome=basico franquiaMinutos=30 valorMinutoExcedente=-1 mensalidade=60
+expectError "Mensalidade nao pode ser nula." criarPlano nome=basico franquiaMinutos=30 valorMinutoExcedente=0,40 mensalidade=""
+expectError "Mensalidade deve ser numerica." criarPlano nome=basico franquiaMinutos=30 valorMinutoExcedente=0,40 mensalidade=abc
+expectError "Mensalidade deve ser nao-negativa." criarPlano nome=basico franquiaMinutos=30 valorMinutoExcedente=0,40 mensalidade=-1
+
+# ---- usando o plano customizado ----
+estacao1=criarEstacao nome="Estacao Premium 1" endereco="Rua Premium, 1" capacidade=5
+estacao2=criarEstacao nome="Estacao Premium 2" endereco="Rua Premium, 2" capacidade=5
+adicionarBicicleta estacao=${estacao1} bicicleta=pp1 tipo=convencional
+
+usuario1=criarUsuario nome="Vitor Chagas" email="vitor@exemplo.com" senha="123456" tipo=pessoaFisica cpf=800.700.600-50
+alterarUsuario usuario=${usuario1} atributo=metodoPagamento valor1=pix chave=vitor@pix.com
+alterarUsuario usuario=${usuario1} atributo=plano valor=premium
+expect premium getAtributoUsuario usuario=${usuario1} atributo=plano
+expect 60,00 getAtributoUsuario usuario=${usuario1} atributo=mensalidade
+
+# dentro da franquia do plano premium (30 min): sem cobranca
+a1=retirarBicicleta usuario=${usuario1} estacao=${estacao1} bicicleta=pp1 data="1/9/2025 08:00"
+devolverBicicleta aluguel=${a1} estacao=${estacao2} data="1/9/2025 08:20"
+expect 0,00 getAtributoAluguel aluguel=${a1} atributo=valorCobrado
+
+# 10 minutos alem da franquia: 10 * 0,40 = 4,00
+a2=retirarBicicleta usuario=${usuario1} estacao=${estacao2} bicicleta=pp1 data="1/9/2025 09:00"
+devolverBicicleta aluguel=${a2} estacao=${estacao1} data="1/9/2025 09:40"
+expect 4,00 getAtributoAluguel aluguel=${a2} atributo=valorCobrado
+
+encerrarSistema
+quit

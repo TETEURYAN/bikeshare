@@ -1,0 +1,86 @@
+#####################################################################################
+# User Story 3 - Alteracao de usuario (inclui metodo de pagamento)
+#####################################################################################
+
+zerarSistema
+
+id1=criarUsuario nome="Pedro Alves" email="pedro@exemplo.com" senha="123456" tipo=pessoaFisica cpf=100.100.100-10
+id2=criarUsuario nome="Rita Nunes" email="rita@exemplo.com" senha="abcdef" tipo=pessoaFisica cpf=200.200.200-20
+
+# ---- alteracoes simples ----
+alterarUsuario usuario=${id1} atributo=nome valor="Pedro Henrique Alves"
+expect "Pedro Henrique Alves" getAtributoUsuario usuario=${id1} atributo=nome
+alterarUsuario usuario=${id1} atributo=email valor=pedroh@exemplo.com
+expect pedroh@exemplo.com getAtributoUsuario usuario=${id1} atributo=email
+alterarUsuario usuario=${id1} atributo=senha valor=novaSenha1
+expect novaSenha1 getAtributoUsuario usuario=${id1} atributo=senha
+
+# ---- alteracao de plano ----
+alterarUsuario usuario=${id1} atributo=plano valor=assinante
+expect assinante getAtributoUsuario usuario=${id1} atributo=plano
+expect 30,00 getAtributoUsuario usuario=${id1} atributo=mensalidade
+alterarUsuario usuario=${id1} atributo=plano valor=avulso
+expect avulso getAtributoUsuario usuario=${id1} atributo=plano
+
+# ---- erros de alteracao simples ----
+expectError "Nome nao pode ser nulo." alterarUsuario usuario=${id1} atributo=nome valor=""
+expectError "Email nao pode ser nulo." alterarUsuario usuario=${id1} atributo=email valor=""
+expectError "Email invalido." alterarUsuario usuario=${id1} atributo=email valor=semarroba.com
+expectError "Email ja cadastrado." alterarUsuario usuario=${id1} atributo=email valor=rita@exemplo.com
+expectError "Senha nao pode ser nula." alterarUsuario usuario=${id1} atributo=senha valor=""
+expectError "Plano invalido." alterarUsuario usuario=${id1} atributo=plano valor=vip
+expectError "Atributo nao pode ser alterado." alterarUsuario usuario=${id1} atributo=idade valor=30
+expectError "Identificacao do usuario nao pode ser nula." alterarUsuario usuario="" atributo=nome valor=x
+expectError "Usuario nao existe." alterarUsuario usuario=U999 atributo=nome valor=x
+
+# ---- metodo de pagamento: cartao ----
+alterarUsuario usuario=${id1} atributo=metodoPagamento valor1=cartao numero=1234-5678-9012-3456 validade=12/2028
+expect cartao getAtributoUsuario usuario=${id1} atributo=metodoPagamento
+expect 1234-5678-9012-3456 getAtributoUsuario usuario=${id1} atributo=numeroCartao
+expect 12/2028 getAtributoUsuario usuario=${id1} atributo=validadeCartao
+# heranca/polimorfismo: atributo valido so para o subtipo certo de MetodoPagamento
+expectError "Usuario nao usa pix." getAtributoUsuario usuario=${id1} atributo=chavePix
+expectError "Usuario nao usa saldo pre-carregado." getAtributoUsuario usuario=${id1} atributo=saldo
+
+expectError "Numero do cartao nao pode ser nulo." alterarUsuario usuario=${id1} atributo=metodoPagamento valor1=cartao numero="" validade=12/2028
+expectError "Validade do cartao nao pode ser nula." alterarUsuario usuario=${id1} atributo=metodoPagamento valor1=cartao numero=1111 validade=""
+expectError "Validade do cartao invalida." alterarUsuario usuario=${id1} atributo=metodoPagamento valor1=cartao numero=1111 validade=13/2028
+expectError "Valor de metodo de pagamento invalido." alterarUsuario usuario=${id1} atributo=metodoPagamento valor1=boleto numero=1111 validade=12/2028
+
+# ---- metodo de pagamento: pix ----
+alterarUsuario usuario=${id1} atributo=metodoPagamento valor1=pix chave=pedroh@pix.com
+expect pix getAtributoUsuario usuario=${id1} atributo=metodoPagamento
+expect pedroh@pix.com getAtributoUsuario usuario=${id1} atributo=chavePix
+expectError "Usuario nao usa cartao." getAtributoUsuario usuario=${id1} atributo=numeroCartao
+expectError "Chave pix nao pode ser nula." alterarUsuario usuario=${id1} atributo=metodoPagamento valor1=pix chave=""
+expectError "Valor de metodo de pagamento invalido." alterarUsuario usuario=${id1} atributo=metodoPagamento valor1=boleto chave=x
+
+# ---- metodo de pagamento: saldo pre-carregado (heranca/polimorfismo de MetodoPagamento) ----
+estacao1=criarEstacao nome="Estacao Central" endereco="Praca Central, 1" capacidade=5
+estacao2=criarEstacao nome="Estacao Norte" endereco="Av. Norte, 100" capacidade=5
+adicionarBicicleta estacao=${estacao1} bicicleta=bikeSaldo1 tipo=convencional
+
+alterarUsuario usuario=${id1} atributo=metodoPagamento valor1=saldoPreCarregado
+expect saldoPreCarregado getAtributoUsuario usuario=${id1} atributo=metodoPagamento
+expect 0,00 getAtributoUsuario usuario=${id1} atributo=saldo
+# saldo insuficiente logo na retirada: SaldoPreCarregado nao autoriza sem fundos
+# (Cartao/Pix, no mesmo cenario, nunca dariam esse erro - so aprovam sempre)
+expectError "Saldo insuficiente." retirarBicicleta usuario=${id1} estacao=${estacao1} bicicleta=bikeSaldo1 data="10/3/2025 08:00"
+
+expectError "Usuario nao usa saldo pre-carregado." alterarUsuario usuario=${id2} atributo=saldo valor=50
+expectError "Valor nao pode ser nulo." alterarUsuario usuario=${id1} atributo=saldo valor=""
+expectError "Valor deve ser numerico." alterarUsuario usuario=${id1} atributo=saldo valor=abc
+expectError "Valor deve ser positivo." alterarUsuario usuario=${id1} atributo=saldo valor=0
+expectError "Valor deve ser positivo." alterarUsuario usuario=${id1} atributo=saldo valor=-10
+
+alterarUsuario usuario=${id1} atributo=saldo valor=100
+expect 100,00 getAtributoUsuario usuario=${id1} atributo=saldo
+a1=retirarBicicleta usuario=${id1} estacao=${estacao1} bicicleta=bikeSaldo1 data="10/3/2025 08:00"
+devolverBicicleta aluguel=${a1} estacao=${estacao2} data="10/3/2025 08:10"
+# 10 minutos de plano avulso: 10 * 0,50 = 5,00, debitados do saldo
+expect 95,00 getAtributoUsuario usuario=${id1} atributo=saldo
+expect finalizado getAtributoAluguel aluguel=${a1} atributo=estado
+expect 5,00 getAtributoAluguel aluguel=${a1} atributo=valorCobrado
+
+encerrarSistema
+quit

@@ -1,0 +1,63 @@
+#####################################################################################
+# User Story 13 - Regras de bloqueio (inadimplencia, estacao cheia/vazia, bicicleta indisponivel)
+#####################################################################################
+
+zerarSistema
+
+estacao1=criarEstacao nome="Estacao Bloqueio 1" endereco="Rua B1, 1" capacidade=3
+estacao2=criarEstacao nome="Estacao Bloqueio 2" endereco="Rua B2, 2" capacidade=1
+estacaoVazia=criarEstacao nome="Estacao Vazia" endereco="Rua Vazia, 3" capacidade=2
+
+adicionarBicicleta estacao=${estacao1} bicicleta=x1 tipo=convencional
+adicionarBicicleta estacao=${estacao1} bicicleta=x2 tipo=convencional
+adicionarBicicleta estacao=${estacao1} bicicleta=x3 tipo=convencional
+adicionarBicicleta estacao=${estacao2} bicicleta=jaOcupa tipo=convencional
+
+usuario1=criarUsuario nome="Wagner Prado" email="wagner@exemplo.com" senha="123456" tipo=pessoaFisica cpf=900.100.200-30
+alterarUsuario usuario=${usuario1} atributo=metodoPagamento valor1=pix chave=wagner@pix.com
+
+# ---- lancaPenalidade: validacoes ----
+expectError "Identificacao do usuario nao pode ser nula." lancaPenalidade usuario="" tipo=dano valor=10 motivo="Teste"
+expectError "Usuario nao existe." lancaPenalidade usuario=U999 tipo=dano valor=10 motivo="Teste"
+expectError "Tipo de penalidade invalido." lancaPenalidade usuario=${usuario1} tipo=atraso valor=10 motivo="Teste"
+expectError "Valor nao pode ser nulo." lancaPenalidade usuario=${usuario1} tipo=dano valor="" motivo="Teste"
+expectError "Valor deve ser numerico." lancaPenalidade usuario=${usuario1} tipo=dano valor=abc motivo="Teste"
+expectError "Valor deve ser positivo." lancaPenalidade usuario=${usuario1} tipo=dano valor=0 motivo="Teste"
+expectError "Valor deve ser positivo." lancaPenalidade usuario=${usuario1} tipo=dano valor=-10 motivo="Teste"
+expectError "Motivo nao pode ser nulo." lancaPenalidade usuario=${usuario1} tipo=dano valor=10 motivo=""
+
+# ---- heranca/polimorfismo de Penalidade: aluguel expirado (PenalidadeAtraso, valor fixo) ----
+expect ativo getAtributoUsuario usuario=${usuario1} atributo=estado
+a1=retirarBicicleta usuario=${usuario1} estacao=${estacao1} bicicleta=x1 data="1/10/2025 08:00"
+devolverBicicleta aluguel=${a1} estacao=${estacao1} data="2/10/2025 09:01"
+expect expirado getAtributoAluguel aluguel=${a1} atributo=estado
+expect inadimplente getAtributoUsuario usuario=${usuario1} atributo=estado
+expect 10,00 getAtributoUsuario usuario=${usuario1} atributo=totalPendencias
+
+# ---- bloqueio: usuario inadimplente nao pode retirar ----
+expectError "Usuario inadimplente." retirarBicicleta usuario=${usuario1} estacao=${estacao1} bicicleta=x2 data="2/10/2025 09:05"
+
+# ---- heranca/polimorfismo de Penalidade: PenalidadeDano lancada manualmente (valor informado) ----
+lancaPenalidade usuario=${usuario1} tipo=dano valor=50 motivo="Pneu furado"
+expect 60,00 getAtributoUsuario usuario=${usuario1} atributo=totalPendencias
+
+# ---- heranca/polimorfismo de Penalidade: PenalidadeUsoIndevido lancada manualmente ----
+lancaPenalidade usuario=${usuario1} tipo=usoIndevido valor=15 motivo="Devolucao fora da area de cobertura"
+expect 75,00 getAtributoUsuario usuario=${usuario1} atributo=totalPendencias
+
+# ---- bloqueio: bicicleta indisponivel (em manutencao) ----
+usuario2=criarUsuario nome="Yara Nobre" email="yara@exemplo.com" senha="123456" tipo=pessoaFisica cpf=900.200.300-40
+alterarUsuario usuario=${usuario2} atributo=metodoPagamento valor1=pix chave=yara@pix.com
+lancaDefeito bicicleta=x2 descricao="Corrente solta"
+expectError "Bicicleta nao esta disponivel." retirarBicicleta usuario=${usuario2} estacao=${estacao1} bicicleta=x2 data="2/10/2025 09:05"
+
+# ---- bloqueio: estacao vazia (nenhuma bicicleta ali) ----
+expectError "Bicicleta nao esta nesta estacao." retirarBicicleta usuario=${usuario2} estacao=${estacaoVazia} bicicleta=x1 data="2/10/2025 09:05"
+
+# ---- bloqueio: estacao cheia na devolucao ----
+a2=retirarBicicleta usuario=${usuario2} estacao=${estacao1} bicicleta=x3 data="2/10/2025 09:05"
+expectError "Estacao cheia." devolverBicicleta aluguel=${a2} estacao=${estacao2} data="2/10/2025 09:10"
+expect emAndamento getAtributoAluguel aluguel=${a2} atributo=estado
+
+encerrarSistema
+quit

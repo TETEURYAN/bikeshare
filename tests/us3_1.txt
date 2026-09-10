@@ -1,0 +1,13 @@
+#####################################################################################
+# User Story 3 - Alteracao de usuario (teste de persistencia)
+#####################################################################################
+
+expect "Pedro Henrique Alves" getAtributoUsuario usuario=U1 atributo=nome
+expect pedroh@exemplo.com getAtributoUsuario usuario=U1 atributo=email
+expect novaSenha1 getAtributoUsuario usuario=U1 atributo=senha
+expect avulso getAtributoUsuario usuario=U1 atributo=plano
+expect saldoPreCarregado getAtributoUsuario usuario=U1 atributo=metodoPagamento
+expect 95,00 getAtributoUsuario usuario=U1 atributo=saldo
+
+encerrarSistema
+quit

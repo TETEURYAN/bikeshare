@@ -1,0 +1,32 @@
+#####################################################################################
+# User Story 4 - Remocao de usuario
+#####################################################################################
+
+zerarSistema
+
+id1=criarUsuario nome="Marcos Dias" email="marcos@exemplo.com" senha="123456" tipo=pessoaFisica cpf=300.400.500-60
+id2=criarUsuario nome="Julia Reis" email="julia@exemplo.com" senha="654321" tipo=pessoaFisica cpf=600.500.400-30
+id3=criarUsuario nome="Fernanda Melo" email="fernanda@exemplo.com" senha="112233" tipo=pessoaFisica cpf=700.600.500-40
+
+# remocao simples
+removerUsuario usuario=${id2}
+expectError "Usuario nao existe." getAtributoUsuario usuario=${id2} atributo=nome
+expectError "Usuario nao existe." removerUsuario usuario=${id2}
+
+# erros gerais
+expectError "Identificacao do usuario nao pode ser nula." removerUsuario usuario=""
+expectError "Usuario nao existe." removerUsuario usuario=U999
+
+# nao pode remover usuario com aluguel em andamento
+estacao1=criarEstacao nome="Estacao das Flores" endereco="Rua das Flores, 10" capacidade=3
+adicionarBicicleta estacao=${estacao1} bicicleta=bikeRem1 tipo=convencional
+alterarUsuario usuario=${id1} atributo=metodoPagamento valor1=pix chave=marcos@pix.com
+a1=retirarBicicleta usuario=${id1} estacao=${estacao1} bicicleta=bikeRem1 data="1/4/2025 09:00"
+expectError "Nao e possivel remover usuario com aluguel em andamento." removerUsuario usuario=${id1}
+
+devolverBicicleta aluguel=${a1} estacao=${estacao1} data="1/4/2025 09:01"
+removerUsuario usuario=${id1}
+expectError "Usuario nao existe." getAtributoUsuario usuario=${id1} atributo=nome
+
+encerrarSistema
+quit

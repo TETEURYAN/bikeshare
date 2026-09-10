@@ -1,0 +1,97 @@
+#####################################################################################
+# User Story 9 - Devolucao de bicicleta
+#####################################################################################
+
+zerarSistema
+
+estacaoA=criarEstacao nome="Estacao A" endereco="Rua A, 1" capacidade=6
+estacaoB=criarEstacao nome="Estacao B" endereco="Rua B, 2" capacidade=6
+
+adicionarBicicleta estacao=${estacaoA} bicicleta=bc tipo=convencional
+adicionarBicicleta estacao=${estacaoA} bicicleta=be tipo=eletrica nivelBateria=80
+adicionarBicicleta estacao=${estacaoA} bicicleta=bc2 tipo=convencional
+adicionarBicicleta estacao=${estacaoA} bicicleta=bc3 tipo=convencional
+adicionarBicicleta estacao=${estacaoA} bicicleta=bc4 tipo=convencional
+adicionarBicicleta estacao=${estacaoA} bicicleta=bc5 tipo=convencional
+
+userAvulso=criarUsuario nome="Otavio Melo" email="otavio@exemplo.com" senha="123456" tipo=pessoaFisica cpf=100.100.200-30
+alterarUsuario usuario=${userAvulso} atributo=metodoPagamento valor1=pix chave=otavio@pix.com
+
+userAssinante=criarUsuario nome="Paula Nogueira" email="paula@exemplo.com" senha="123456" \
+	tipo=pessoaFisica cpf=200.200.300-40 plano=assinante mensalidade=40
+alterarUsuario usuario=${userAssinante} atributo=metodoPagamento valor1=pix chave=paula@pix.com
+
+# ---- heranca/polimorfismo: mesma corrida (10 min), tarifas diferentes por tipo de bicicleta ----
+a1=retirarBicicleta usuario=${userAvulso} estacao=${estacaoA} bicicleta=bc data="1/6/2025 08:00"
+devolverBicicleta aluguel=${a1} estacao=${estacaoB} data="1/6/2025 08:10"
+expect finalizado getAtributoAluguel aluguel=${a1} atributo=estado
+expect 5,00 getAtributoAluguel aluguel=${a1} atributo=valorCobrado
+expect ${estacaoB} getAtributoAluguel aluguel=${a1} atributo=estacaoDestino
+expect "1/6/2025 8:10" getAtributoAluguel aluguel=${a1} atributo=fim
+expect disponivel getEstadoBicicleta bicicleta=bc
+expect nenhum getAtributoUsuario usuario=${userAvulso} atributo=aluguelAtivo
+
+a2=retirarBicicleta usuario=${userAvulso} estacao=${estacaoA} bicicleta=be data="1/6/2025 09:00"
+devolverBicicleta aluguel=${a2} estacao=${estacaoB} data="1/6/2025 09:10"
+expect 7,00 getAtributoAluguel aluguel=${a2} atributo=valorCobrado
+
+# ---- plano assinante: franquia gratuita e minuto excedente ----
+a3=retirarBicicleta usuario=${userAssinante} estacao=${estacaoA} bicicleta=bc2 data="1/6/2025 10:00"
+devolverBicicleta aluguel=${a3} estacao=${estacaoB} data="1/6/2025 10:50"
+expect 0,00 getAtributoAluguel aluguel=${a3} atributo=valorCobrado
+
+a4=retirarBicicleta usuario=${userAssinante} estacao=${estacaoB} bicicleta=bc2 data="1/6/2025 11:00"
+devolverBicicleta aluguel=${a4} estacao=${estacaoA} data="1/6/2025 12:30"
+expect 9,00 getAtributoAluguel aluguel=${a4} atributo=valorCobrado
+
+a5=retirarBicicleta usuario=${userAssinante} estacao=${estacaoB} bicicleta=be data="1/6/2025 13:00"
+devolverBicicleta aluguel=${a5} estacao=${estacaoA} data="1/6/2025 14:30"
+expect 27,00 getAtributoAluguel aluguel=${a5} atributo=valorCobrado
+
+# ---- cancelamento por prazo de carencia (mesma estacao, ate 2 minutos) ----
+a6=retirarBicicleta usuario=${userAvulso} estacao=${estacaoA} bicicleta=bc3 data="2/6/2025 08:00"
+devolverBicicleta aluguel=${a6} estacao=${estacaoA} data="2/6/2025 08:02"
+expect cancelado getAtributoAluguel aluguel=${a6} atributo=estado
+expect 0,00 getAtributoAluguel aluguel=${a6} atributo=valorCobrado
+expect disponivel getEstadoBicicleta bicicleta=bc3
+expect 5 getBicicletasDisponiveis estacao=${estacaoA}
+
+# depois da carencia (3 minutos, mesma estacao): corrida normal, ha cobranca
+a7=retirarBicicleta usuario=${userAvulso} estacao=${estacaoA} bicicleta=bc3 data="2/6/2025 09:00"
+devolverBicicleta aluguel=${a7} estacao=${estacaoA} data="2/6/2025 09:03"
+expect finalizado getAtributoAluguel aluguel=${a7} atributo=estado
+expect 1,50 getAtributoAluguel aluguel=${a7} atributo=valorCobrado
+
+# ---- expiracao por tempo maximo excedido (24h) gera penalidade automatica ----
+expect 0,00 getAtributoUsuario usuario=${userAvulso} atributo=totalPendencias
+a8=retirarBicicleta usuario=${userAvulso} estacao=${estacaoA} bicicleta=bc4 data="3/6/2025 08:00"
+devolverBicicleta aluguel=${a8} estacao=${estacaoB} data="4/6/2025 09:01"
+expect expirado getAtributoAluguel aluguel=${a8} atributo=estado
+expect 0,00 getAtributoAluguel aluguel=${a8} atributo=valorCobrado
+expect emManutencao getEstadoBicicleta bicicleta=bc4
+expect inadimplente getAtributoUsuario usuario=${userAvulso} atributo=estado
+expect 10,00 getAtributoUsuario usuario=${userAvulso} atributo=totalPendencias
+
+# ---- devolucao recusada em estacao cheia (aluguel permanece em andamento) ----
+estacaoCheia=criarEstacao nome="Estacao Cheia" endereco="Rua C, 3" capacidade=1
+adicionarBicicleta estacao=${estacaoCheia} bicicleta=ocupante tipo=convencional
+a9=retirarBicicleta usuario=${userAssinante} estacao=${estacaoA} bicicleta=bc5 data="5/6/2025 08:00"
+expectError "Estacao cheia." devolverBicicleta aluguel=${a9} estacao=${estacaoCheia} data="5/6/2025 08:20"
+expect emAndamento getAtributoAluguel aluguel=${a9} atributo=estado
+devolverBicicleta aluguel=${a9} estacao=${estacaoB} data="5/6/2025 08:20"
+expect finalizado getAtributoAluguel aluguel=${a9} atributo=estado
+
+# ---- erros de validacao ----
+expectError "Identificacao do aluguel nao pode ser nula." devolverBicicleta aluguel="" estacao=${estacaoA} data="1/6/2025 08:00"
+expectError "Aluguel nao existe." devolverBicicleta aluguel=A999 estacao=${estacaoA} data="1/6/2025 08:00"
+expectError "Identificacao da estacao nao pode ser nula." devolverBicicleta aluguel=${a1} estacao="" data="1/6/2025 08:00"
+expectError "Estacao nao existe." devolverBicicleta aluguel=${a1} estacao=E999 data="1/6/2025 08:00"
+expectError "Data nao pode ser nula." devolverBicicleta aluguel=${a1} estacao=${estacaoA} data=""
+expectError "Data invalida." devolverBicicleta aluguel=${a1} estacao=${estacaoA} data="31/2/2025 08:00"
+expectError "Aluguel nao esta em andamento." devolverBicicleta aluguel=${a1} estacao=${estacaoA} data="1/6/2025 08:10"
+
+a10=retirarBicicleta usuario=${userAssinante} estacao=${estacaoB} bicicleta=bc5 data="6/6/2025 08:00"
+expectError "Data de devolucao anterior a data de retirada." devolverBicicleta aluguel=${a10} estacao=${estacaoB} data="6/6/2025 07:00"
+
+encerrarSistema
+quit

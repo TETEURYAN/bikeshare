@@ -1,0 +1,39 @@
+#####################################################################################
+# User Story 7 - Consulta de disponibilidade (bicicletas / vagas)
+#####################################################################################
+
+zerarSistema
+
+estacao1=criarEstacao nome="Estacao Universitaria" endereco="Av. Universitaria, 900" capacidade=4
+expect 0 getBicicletasDisponiveis estacao=${estacao1}
+expect 4 getVagasDisponiveis estacao=${estacao1}
+
+adicionarBicicleta estacao=${estacao1} bicicleta=d1 tipo=convencional
+adicionarBicicleta estacao=${estacao1} bicicleta=d2 tipo=convencional
+adicionarBicicleta estacao=${estacao1} bicicleta=d3 tipo=convencional
+expect 3 getBicicletasDisponiveis estacao=${estacao1}
+expect 1 getVagasDisponiveis estacao=${estacao1}
+
+# estacao cheia: nao ha mais vaga para uma quarta bicicleta alem da capacidade
+adicionarBicicleta estacao=${estacao1} bicicleta=d4 tipo=convencional
+expect 4 getBicicletasDisponiveis estacao=${estacao1}
+expect 0 getVagasDisponiveis estacao=${estacao1}
+expectError "Estacao sem vagas disponiveis." adicionarBicicleta estacao=${estacao1} bicicleta=d5 tipo=convencional
+
+# bicicleta em uso nao conta como disponivel, mas libera uma vaga na estacao
+usuario1=criarUsuario nome="Bia Torres" email="bia@exemplo.com" senha="123456" tipo=pessoaFisica cpf=900.800.700-60
+alterarUsuario usuario=${usuario1} atributo=metodoPagamento valor1=pix chave=bia@pix.com
+a1=retirarBicicleta usuario=${usuario1} estacao=${estacao1} bicicleta=d1 data="5/5/2025 10:00"
+expect 3 getBicicletasDisponiveis estacao=${estacao1}
+expect 1 getVagasDisponiveis estacao=${estacao1}
+
+# bicicleta em manutencao ocupa vaga fisica, mas nao conta como disponivel
+lancaDefeito bicicleta=d2 descricao="Pneu furado"
+expect 2 getBicicletasDisponiveis estacao=${estacao1}
+expect 1 getVagasDisponiveis estacao=${estacao1}
+
+concluiManutencao bicicleta=d2
+expect 3 getBicicletasDisponiveis estacao=${estacao1}
+
+encerrarSistema
+quit

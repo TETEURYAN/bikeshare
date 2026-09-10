@@ -1,0 +1,9 @@
+#####################################################################################
+# User Story 14 - Lancamento e conclusao de manutencao (teste de persistencia)
+#####################################################################################
+
+expect disponivel getEstadoBicicleta bicicleta=m1
+expect emUso getEstadoBicicleta bicicleta=m2
+
+encerrarSistema
+quit

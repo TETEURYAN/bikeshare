@@ -1,0 +1,44 @@
+#####################################################################################
+# User Story 11 - Planos e tarifacao (avulso / assinante)
+#####################################################################################
+
+zerarSistema
+
+estacao1=criarEstacao nome="Estacao Leste" endereco="Av. Leste, 30" capacidade=5
+estacao2=criarEstacao nome="Estacao Oeste" endereco="Av. Oeste, 40" capacidade=5
+adicionarBicicleta estacao=${estacao1} bicicleta=p1 tipo=convencional
+
+usuario1=criarUsuario nome="Igor Barros" email="igor@exemplo.com" senha="123456" tipo=pessoaFisica cpf=500.600.700-80
+alterarUsuario usuario=${usuario1} atributo=metodoPagamento valor1=pix chave=igor@pix.com
+expect avulso getAtributoUsuario usuario=${usuario1} atributo=plano
+
+# plano avulso: cobranca proporcional aos minutos, sem franquia
+a1=retirarBicicleta usuario=${usuario1} estacao=${estacao1} bicicleta=p1 data="1/8/2025 08:00"
+devolverBicicleta aluguel=${a1} estacao=${estacao2} data="1/8/2025 08:04"
+expect 2,00 getAtributoAluguel aluguel=${a1} atributo=valorCobrado
+
+# contratando o plano assinante (mensalidade padrao quando nao informada na alteracao)
+alterarUsuario usuario=${usuario1} atributo=plano valor=assinante
+expect assinante getAtributoUsuario usuario=${usuario1} atributo=plano
+expect 30,00 getAtributoUsuario usuario=${usuario1} atributo=mensalidade
+
+# exatamente no limite da franquia (60 minutos): sem cobranca
+a2=retirarBicicleta usuario=${usuario1} estacao=${estacao2} bicicleta=p1 data="1/8/2025 09:00"
+devolverBicicleta aluguel=${a2} estacao=${estacao1} data="1/8/2025 10:00"
+expect 0,00 getAtributoAluguel aluguel=${a2} atributo=valorCobrado
+
+# um minuto alem da franquia: cobra o minuto excedente do assinante
+a3=retirarBicicleta usuario=${usuario1} estacao=${estacao1} bicicleta=p1 data="1/8/2025 11:00"
+devolverBicicleta aluguel=${a3} estacao=${estacao2} data="1/8/2025 12:01"
+expect 0,30 getAtributoAluguel aluguel=${a3} atributo=valorCobrado
+
+# voltando para o plano avulso
+alterarUsuario usuario=${usuario1} atributo=plano valor=avulso
+expect avulso getAtributoUsuario usuario=${usuario1} atributo=plano
+expectError "Plano nao possui mensalidade." getAtributoUsuario usuario=${usuario1} atributo=mensalidade
+
+expectError "Plano invalido." alterarUsuario usuario=${usuario1} atributo=plano valor=platina
+expectError "Plano invalido." alterarUsuario usuario=${usuario1} atributo=plano valor=""
+
+encerrarSistema
+quit

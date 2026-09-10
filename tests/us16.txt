@@ -1,0 +1,156 @@
+#####################################################################################
+# User Story 16 - Undo/redo
+#####################################################################################
+
+zerarSistema
+
+# ---- monta um historico de operacoes a ser desfeito/refeito ----
+id1=criarUsuario nome="Julio Serra" email="julio@exemplo.com" senha="123456" tipo=pessoaFisica cpf=100.200.300-11
+id2=criarUsuario nome="Marina Alves" email="marina@exemplo.com" senha="123456" \
+	tipo=pessoaJuridica cnpj=11.222.333/0001-55 razaoSocial="Marina Alves ME"
+removerUsuario usuario=${id1}
+alterarUsuario usuario=${id2} atributo=nome valor="Marina Nova"
+alterarUsuario usuario=${id2} atributo=metodoPagamento valor1=pix chave=marina@pix.com
+estacaoA=criarEstacao nome="Estacao Undo" endereco="Rua Undo, 1" capacidade=3
+adicionarBicicleta estacao=${estacaoA} bicicleta=bikeUndo tipo=convencional
+a1=retirarBicicleta usuario=${id2} estacao=${estacaoA} bicicleta=bikeUndo data="1/12/2025 08:00"
+devolverBicicleta aluguel=${a1} estacao=${estacaoA} data="1/12/2025 08:01"
+lancaPenalidade usuario=${id2} tipo=dano valor=20 motivo="Retrovisor quebrado"
+plano1=criarPlano nome=undoPlano franquiaMinutos=15 valorMinutoExcedente=0,20 mensalidade=25
+zerarSistema
+
+# ---- TESTES DE UNDO ----
+expectError "Usuario nao existe." getAtributoUsuario usuario=${id2} atributo=nome
+
+# undo de zerarSistema
+undo
+expect "Marina Nova" getAtributoUsuario usuario=${id2} atributo=nome
+expect inadimplente getAtributoUsuario usuario=${id2} atributo=estado
+expect 20,00 getAtributoUsuario usuario=${id2} atributo=totalPendencias
+expect cancelado getAtributoAluguel aluguel=${a1} atributo=estado
+
+# undo de criarPlano
+undo
+expectError "Plano invalido." alterarUsuario usuario=${id2} atributo=plano valor=undoPlano
+
+# undo de lancaPenalidade
+undo
+expect 0,00 getAtributoUsuario usuario=${id2} atributo=totalPendencias
+expect ativo getAtributoUsuario usuario=${id2} atributo=estado
+
+# undo de devolverBicicleta
+undo
+expect emAndamento getAtributoAluguel aluguel=${a1} atributo=estado
+expect emUso getEstadoBicicleta bicicleta=bikeUndo
+expect ${a1} getAtributoUsuario usuario=${id2} atributo=aluguelAtivo
+
+# undo de retirarBicicleta
+undo
+expectError "Aluguel nao existe." getAtributoAluguel aluguel=${a1} atributo=estado
+expect disponivel getEstadoBicicleta bicicleta=bikeUndo
+expect nenhum getAtributoUsuario usuario=${id2} atributo=aluguelAtivo
+
+# undo de adicionarBicicleta
+undo
+expectError "Bicicleta nao existe." getEstadoBicicleta bicicleta=bikeUndo
+
+# undo de criarEstacao
+undo
+expectError "Estacao nao existe." getVagasDisponiveis estacao=${estacaoA}
+
+# undo de alterarUsuario (metodoPagamento)
+undo
+expect nenhum getAtributoUsuario usuario=${id2} atributo=metodoPagamento
+
+# undo de alterarUsuario (nome)
+undo
+expect "Marina Alves" getAtributoUsuario usuario=${id2} atributo=nome
+
+# undo de removerUsuario
+undo
+expect "Julio Serra" getAtributoUsuario usuario=${id1} atributo=nome
+
+# undo de criarUsuario (id2)
+undo
+expectError "Usuario nao existe." getAtributoUsuario usuario=${id2} atributo=nome
+
+# undo de criarUsuario (id1)
+undo
+expectError "Usuario nao existe." getAtributoUsuario usuario=${id1} atributo=nome
+
+# undo do zerarSistema inicial deste arquivo (restaura o estado herdado do arquivo anterior)
+undo
+
+# nao ha mais nada para desfazer
+expectError "Nao ha comando a desfazer." undo
+
+# ---- TESTES DE REDO (reaplica exatamente na ordem inversa dos undos) ----
+
+# redo do zerarSistema inicial
+redo
+
+# redo de criarUsuario (id1)
+redo
+expect "Julio Serra" getAtributoUsuario usuario=${id1} atributo=nome
+
+# redo de criarUsuario (id2)
+redo
+expect "Marina Alves" getAtributoUsuario usuario=${id2} atributo=nome
+
+# redo de removerUsuario
+redo
+expectError "Usuario nao existe." getAtributoUsuario usuario=${id1} atributo=nome
+
+# redo de alterarUsuario (nome)
+redo
+expect "Marina Nova" getAtributoUsuario usuario=${id2} atributo=nome
+
+# redo de alterarUsuario (metodoPagamento)
+redo
+expect pix getAtributoUsuario usuario=${id2} atributo=metodoPagamento
+
+# redo de criarEstacao
+redo
+expect 3 getVagasDisponiveis estacao=${estacaoA}
+
+# redo de adicionarBicicleta
+redo
+expect disponivel getEstadoBicicleta bicicleta=bikeUndo
+
+# redo de retirarBicicleta
+redo
+expect emAndamento getAtributoAluguel aluguel=${a1} atributo=estado
+
+# redo de devolverBicicleta
+redo
+expect cancelado getAtributoAluguel aluguel=${a1} atributo=estado
+
+# redo de lancaPenalidade
+redo
+expect 20,00 getAtributoUsuario usuario=${id2} atributo=totalPendencias
+
+# redo de criarPlano
+redo
+expectError "Plano ja existe." criarPlano nome=undoPlano franquiaMinutos=1 valorMinutoExcedente=1 mensalidade=1
+
+# redo do zerarSistema do meio do teste
+redo
+expectError "Usuario nao existe." getAtributoUsuario usuario=${id2} atributo=nome
+
+# nao ha mais nada para refazer
+expectError "Nao ha comando a refazer." redo
+
+# ---- um novo comando limpa a pilha de refazer ----
+undo
+expect "Marina Nova" getAtributoUsuario usuario=${id2} atributo=nome
+id3=criarUsuario nome="Norberto Reis" email="norberto@exemplo.com" senha="123456" tipo=pessoaFisica cpf=900.800.700-60
+expectError "Nao ha comando a refazer." redo
+
+# ---- comando que da erro nao entra na lista de comandos a desfazer ----
+expect "Norberto Reis" getAtributoUsuario usuario=${id3} atributo=nome
+expectError "Nome nao pode ser nulo." criarUsuario nome="" email="x@x.com" senha="123456" tipo=pessoaFisica cpf=999.999.999-99
+undo
+expectError "Usuario nao existe." getAtributoUsuario usuario=${id3} atributo=nome
+
+encerrarSistema
+quit

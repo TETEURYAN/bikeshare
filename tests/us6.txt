@@ -1,0 +1,59 @@
+#####################################################################################
+# User Story 6 - Gestao de bicicletas na estacao (convencional / eletrica)
+#####################################################################################
+
+zerarSistema
+
+estacao1=criarEstacao nome="Estacao Parque" endereco="Av. do Parque, 20" capacidade=2
+estacao2=criarEstacao nome="Estacao Praia" endereco="Av. Beira Mar, 300" capacidade=5
+
+# ---- convencional ----
+adicionarBicicleta estacao=${estacao1} bicicleta=bc1 tipo=convencional
+expect convencional getAtributoBicicleta bicicleta=bc1 atributo=tipo
+expect disponivel getAtributoBicicleta bicicleta=bc1 atributo=estado
+expect disponivel getEstadoBicicleta bicicleta=bc1
+expect ${estacao1} getAtributoBicicleta bicicleta=bc1 atributo=estacao
+expect 1 getBicicletasDisponiveis estacao=${estacao1}
+expect 1 getVagasDisponiveis estacao=${estacao1}
+
+# heranca/polimorfismo: bicicleta convencional nao possui nivel de bateria
+expectError "Bicicleta nao possui bateria." getAtributoBicicleta bicicleta=bc1 atributo=nivelBateria
+
+# ---- eletrica ----
+adicionarBicicleta estacao=${estacao1} bicicleta=be1 tipo=eletrica nivelBateria=80
+expect eletrica getAtributoBicicleta bicicleta=be1 atributo=tipo
+expect 80 getAtributoBicicleta bicicleta=be1 atributo=nivelBateria
+expect 0 getVagasDisponiveis estacao=${estacao1}
+
+# estacao cheia (capacidade 2, ja tem 2 bicicletas)
+expectError "Estacao sem vagas disponiveis." adicionarBicicleta estacao=${estacao1} bicicleta=bc2 tipo=convencional
+
+# ---- erros de cadastro ----
+expectError "Identificacao da estacao nao pode ser nula." adicionarBicicleta estacao="" bicicleta=bx tipo=convencional
+expectError "Estacao nao existe." adicionarBicicleta estacao=E999 bicicleta=bx tipo=convencional
+expectError "Identificacao da bicicleta nao pode ser nula." adicionarBicicleta estacao=${estacao2} bicicleta="" tipo=convencional
+expectError "Bicicleta ja existe." adicionarBicicleta estacao=${estacao2} bicicleta=bc1 tipo=convencional
+expectError "Tipo invalido." adicionarBicicleta estacao=${estacao2} bicicleta=bx tipo=eletrico
+expectError "Nivel de bateria nao pode ser nulo." adicionarBicicleta estacao=${estacao2} bicicleta=bx tipo=eletrica nivelBateria=""
+expectError "Nivel de bateria deve ser numerico." adicionarBicicleta estacao=${estacao2} bicicleta=bx tipo=eletrica nivelBateria=abc
+expectError "Nivel de bateria deve estar entre 0 e 100." adicionarBicicleta estacao=${estacao2} bicicleta=bx tipo=eletrica nivelBateria=-1
+expectError "Nivel de bateria deve estar entre 0 e 100." adicionarBicicleta estacao=${estacao2} bicicleta=bx tipo=eletrica nivelBateria=101
+
+# ---- remocao ----
+adicionarBicicleta estacao=${estacao2} bicicleta=bc3 tipo=convencional
+removerBicicleta estacao=${estacao2} bicicleta=bc3
+expectError "Bicicleta nao existe." getAtributoBicicleta bicicleta=bc3 atributo=tipo
+expect 5 getVagasDisponiveis estacao=${estacao2}
+
+expectError "Identificacao da bicicleta nao pode ser nula." removerBicicleta estacao=${estacao2} bicicleta=""
+expectError "Bicicleta nao existe." removerBicicleta estacao=${estacao2} bicicleta=bx999
+expectError "Bicicleta nao esta nesta estacao." removerBicicleta estacao=${estacao2} bicicleta=bc1
+
+# ---- erros de consulta ----
+expectError "Identificacao da bicicleta nao pode ser nula." getAtributoBicicleta bicicleta="" atributo=tipo
+expectError "Bicicleta nao existe." getAtributoBicicleta bicicleta=bx999 atributo=tipo
+expectError "Atributo nao existe." getAtributoBicicleta bicicleta=bc1 atributo=cor
+expectError "Bicicleta nao existe." getEstadoBicicleta bicicleta=bx999
+
+encerrarSistema
+quit
