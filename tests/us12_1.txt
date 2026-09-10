@@ -1,0 +1,11 @@
+#####################################################################################
+# User Story 12 - Criacao de novos planos de tarifacao (teste de persistencia)
+#####################################################################################
+
+expect premium getAtributoUsuario usuario=U1 atributo=plano
+expect 60,00 getAtributoUsuario usuario=U1 atributo=mensalidade
+expect 4,00 getAtributoAluguel aluguel=A2 atributo=valorCobrado
+expectError "Plano ja existe." criarPlano nome=premium franquiaMinutos=10 valorMinutoExcedente=0,10 mensalidade=10
+
+encerrarSistema
+quit

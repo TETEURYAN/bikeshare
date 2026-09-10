@@ -1,0 +1,43 @@
+#####################################################################################
+# User Story 14 - Lancamento e conclusao de manutencao
+#####################################################################################
+
+zerarSistema
+
+estacao1=criarEstacao nome="Estacao Oficina" endereco="Rua da Oficina, 1" capacidade=3
+adicionarBicicleta estacao=${estacao1} bicicleta=m1 tipo=convencional
+adicionarBicicleta estacao=${estacao1} bicicleta=m2 tipo=convencional
+
+usuario1=criarUsuario nome="Bruno Tavares" email="bruno@exemplo.com" senha="123456" tipo=pessoaFisica cpf=100.900.800-70
+alterarUsuario usuario=${usuario1} atributo=metodoPagamento valor1=pix chave=bruno@pix.com
+
+# ---- fluxo normal ----
+expect disponivel getEstadoBicicleta bicicleta=m1
+lancaDefeito bicicleta=m1 descricao="Selim quebrado"
+expect emManutencao getEstadoBicicleta bicicleta=m1
+expect 1 getBicicletasDisponiveis estacao=${estacao1}
+concluiManutencao bicicleta=m1
+expect disponivel getEstadoBicicleta bicicleta=m1
+expect 2 getBicicletasDisponiveis estacao=${estacao1}
+
+# ---- erros de lancaDefeito ----
+expectError "Identificacao da bicicleta nao pode ser nula." lancaDefeito bicicleta="" descricao="Selim quebrado"
+expectError "Bicicleta nao existe." lancaDefeito bicicleta=bx999 descricao="Selim quebrado"
+expectError "Descricao nao pode ser nula." lancaDefeito bicicleta=m1 descricao=""
+
+lancaDefeito bicicleta=m2 descricao="Corrente enferrujada"
+expectError "Bicicleta ja esta em manutencao." lancaDefeito bicicleta=m2 descricao="Outro defeito"
+
+# defeito nao pode ser lancado em bicicleta em uso
+concluiManutencao bicicleta=m2
+a1=retirarBicicleta usuario=${usuario1} estacao=${estacao1} bicicleta=m2 data="1/11/2025 08:00"
+expectError "Nao e possivel lancar defeito em bicicleta em uso." lancaDefeito bicicleta=m2 descricao="Barulho estranho"
+
+# ---- erros de concluiManutencao ----
+expectError "Identificacao da bicicleta nao pode ser nula." concluiManutencao bicicleta=""
+expectError "Bicicleta nao existe." concluiManutencao bicicleta=bx999
+expectError "Bicicleta nao esta em manutencao." concluiManutencao bicicleta=m1
+expectError "Bicicleta nao esta em manutencao." concluiManutencao bicicleta=m2
+
+encerrarSistema
+quit

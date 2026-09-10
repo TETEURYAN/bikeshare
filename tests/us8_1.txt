@@ -1,0 +1,11 @@
+#####################################################################################
+# User Story 8 - Retirada de bicicleta (teste de persistencia)
+#####################################################################################
+
+expect emAndamento getAtributoAluguel aluguel=A1 atributo=estado
+expect emUso getEstadoBicicleta bicicleta=r1
+expect A1 getAtributoUsuario usuario=U1 atributo=aluguelAtivo
+expect inadimplente getAtributoUsuario usuario=U2 atributo=estado
+
+encerrarSistema
+quit

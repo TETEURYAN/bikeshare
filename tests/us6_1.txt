@@ -1,0 +1,11 @@
+#####################################################################################
+# User Story 6 - Gestao de bicicletas na estacao (teste de persistencia)
+#####################################################################################
+
+expect convencional getAtributoBicicleta bicicleta=bc1 atributo=tipo
+expect eletrica getAtributoBicicleta bicicleta=be1 atributo=tipo
+expect 80 getAtributoBicicleta bicicleta=be1 atributo=nivelBateria
+expectError "Bicicleta nao existe." getAtributoBicicleta bicicleta=bc3 atributo=tipo
+
+encerrarSistema
+quit

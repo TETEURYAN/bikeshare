@@ -1,0 +1,73 @@
+#####################################################################################
+# User Story 1 - Cadastro de usuario (pessoa fisica / pessoa juridica)
+#####################################################################################
+
+zerarSistema
+expectError "Usuario nao existe." getAtributoUsuario usuario=abc atributo=nome
+
+# ---- pessoa fisica, plano avulso (padrao) ----
+id1=criarUsuario nome="Ana Souza" email="ana@exemplo.com" senha="123456" tipo=pessoaFisica cpf=111.222.333-44
+expect "Ana Souza" getAtributoUsuario usuario=${id1} atributo=nome
+expect ana@exemplo.com getAtributoUsuario usuario=${id1} atributo=email
+expect pessoaFisica getAtributoUsuario usuario=${id1} atributo=tipo
+expect ativo getAtributoUsuario usuario=${id1} atributo=estado
+expect avulso getAtributoUsuario usuario=${id1} atributo=plano
+expect 111.222.333-44 getAtributoUsuario usuario=${id1} atributo=cpf
+expect nenhum getAtributoUsuario usuario=${id1} atributo=metodoPagamento
+
+# ---- pessoa juridica, plano avulso ----
+id2=criarUsuario nome="Bike Corp Ltda" email="contato@bikecorp.com" senha="senha123" \
+	tipo=pessoaJuridica cnpj=12.345.678/0001-99 razaoSocial="Bike Corp Ltda"
+expect pessoaJuridica getAtributoUsuario usuario=${id2} atributo=tipo
+expect 12.345.678/0001-99 getAtributoUsuario usuario=${id2} atributo=cnpj
+expect "Bike Corp Ltda" getAtributoUsuario usuario=${id2} atributo=razaoSocial
+expectDifferent ${id1} echo ${id2}
+
+# ---- herança/polimorfismo: atributo valido so para o subtipo certo ----
+expectError "Usuario nao eh pessoa juridica." getAtributoUsuario usuario=${id1} atributo=cnpj
+expectError "Usuario nao eh pessoa juridica." getAtributoUsuario usuario=${id1} atributo=razaoSocial
+expectError "Usuario nao eh pessoa fisica." getAtributoUsuario usuario=${id2} atributo=cpf
+
+# ---- pessoa fisica, plano assinante ----
+id3=criarUsuario nome="Carlos Lima" email="carlos@exemplo.com" senha="abc123" \
+	tipo=pessoaFisica cpf=222.333.444-55 plano=assinante mensalidade=50
+expect assinante getAtributoUsuario usuario=${id3} atributo=plano
+expect 50,00 getAtributoUsuario usuario=${id3} atributo=mensalidade
+expectError "Plano nao possui mensalidade." getAtributoUsuario usuario=${id1} atributo=mensalidade
+
+# ---- pessoa juridica, plano assinante ----
+id4=criarUsuario nome="Frota SA" email="frota@exemplo.com" senha="segredo1" \
+	tipo=pessoaJuridica cnpj=98.765.432/0001-11 razaoSocial="Frota SA de Logistica" \
+	plano=assinante mensalidade=120,50
+expect assinante getAtributoUsuario usuario=${id4} atributo=plano
+expect 120,50 getAtributoUsuario usuario=${id4} atributo=mensalidade
+
+# ---- erros de validacao (pessoa fisica) ----
+expectError "Nome nao pode ser nulo." criarUsuario nome="" email="x@x.com" senha="123456" tipo=pessoaFisica cpf=111.222.333-44
+expectError "Email nao pode ser nulo." criarUsuario nome="X" email="" senha="123456" tipo=pessoaFisica cpf=111.222.333-44
+expectError "Email invalido." criarUsuario nome="X" email="xexemplo.com" senha="123456" tipo=pessoaFisica cpf=111.222.333-44
+expectError "Senha nao pode ser nula." criarUsuario nome="X" email="x@x.com" senha="" tipo=pessoaFisica cpf=111.222.333-44
+expectError "Tipo invalido." criarUsuario nome="X" email="x2@x.com" senha="123456" tipo=abc cpf=111.222.333-44
+expectError "CPF nao pode ser nulo." criarUsuario nome="X" email="x3@x.com" senha="123456" tipo=pessoaFisica cpf=""
+expectError "Email ja cadastrado." criarUsuario nome="Outra Ana" email="ana@exemplo.com" senha="000000" tipo=pessoaFisica cpf=333.444.555-66
+
+# ---- erros de validacao (pessoa juridica) ----
+expectError "Tipo invalido." criarUsuario nome="X" email="x4@x.com" senha="123456" tipo=pessoaFisica cnpj=12.345.678/0001-99 razaoSocial="X Ltda"
+expectError "CNPJ nao pode ser nulo." criarUsuario nome="X" email="x5@x.com" senha="123456" tipo=pessoaJuridica cnpj="" razaoSocial="X Ltda"
+expectError "Razao social nao pode ser nula." criarUsuario nome="X" email="x6@x.com" senha="123456" tipo=pessoaJuridica cnpj=11.111.111/0001-11 razaoSocial=""
+
+# ---- erros de plano/mensalidade na criacao ----
+expectError "Plano invalido." criarUsuario nome="X" email="x7@x.com" senha="123456" tipo=pessoaFisica cpf=444.555.666-77 plano=vip mensalidade=10
+expectError "Mensalidade nao pode ser nula." criarUsuario nome="X" email="x8@x.com" senha="123456" tipo=pessoaFisica cpf=555.666.777-88 plano=assinante mensalidade=""
+expectError "Mensalidade deve ser numerica." criarUsuario nome="X" email="x9@x.com" senha="123456" tipo=pessoaFisica cpf=666.777.888-99 plano=assinante mensalidade=abc
+expectError "Mensalidade deve ser nao-negativa." criarUsuario nome="X" email="x10@x.com" senha="123456" tipo=pessoaFisica cpf=777.888.999-00 plano=assinante mensalidade=-5
+expectError "Razao social nao pode ser nula." criarUsuario nome="X" email="x11@x.com" senha="123456" tipo=pessoaJuridica cnpj=22.222.222/0001-22 razaoSocial="" plano=assinante mensalidade=10
+expectError "Mensalidade nao pode ser nula." criarUsuario nome="X" email="x12@x.com" senha="123456" tipo=pessoaJuridica cnpj=33.333.333/0001-33 razaoSocial="X Ltda" plano=assinante mensalidade=""
+
+# ---- getAtributoUsuario: erros genericos ----
+expectError "Identificacao do usuario nao pode ser nula." getAtributoUsuario usuario="" atributo=nome
+expectError "Usuario nao existe." getAtributoUsuario usuario=abc atributo=nome
+expectError "Atributo nao existe." getAtributoUsuario usuario=${id1} atributo=abc
+
+encerrarSistema
+quit

@@ -1,0 +1,9 @@
+#####################################################################################
+# User Story 11 - Planos e tarifacao (teste de persistencia)
+#####################################################################################
+
+expect avulso getAtributoUsuario usuario=U1 atributo=plano
+expect 0,30 getAtributoAluguel aluguel=A3 atributo=valorCobrado
+
+encerrarSistema
+quit

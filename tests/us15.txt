@@ -1,0 +1,50 @@
+#####################################################################################
+# User Story 15 - Relatorios (disponibilidade, faturamento)
+#####################################################################################
+
+zerarSistema
+
+estacao1=criarEstacao nome="Estacao Relatorio 1" endereco="Rua R1, 1" capacidade=4
+estacao2=criarEstacao nome="Estacao Relatorio 2" endereco="Rua R2, 2" capacidade=4
+adicionarBicicleta estacao=${estacao1} bicicleta=f1 tipo=convencional
+adicionarBicicleta estacao=${estacao1} bicicleta=f2 tipo=convencional
+
+usuario1=criarUsuario nome="Camila Duarte" email="camila@exemplo.com" senha="123456" tipo=pessoaFisica cpf=100.300.500-70
+alterarUsuario usuario=${usuario1} atributo=metodoPagamento valor1=pix chave=camila@pix.com
+
+# relatorio de disponibilidade (reaproveitando US7)
+expect 2 getBicicletasDisponiveis estacao=${estacao1}
+expect 2 getVagasDisponiveis estacao=${estacao1}
+
+# corrida 1: finalizada em 5/1/2026, valor 5,00
+a1=retirarBicicleta usuario=${usuario1} estacao=${estacao1} bicicleta=f1 data="5/1/2026 08:00"
+devolverBicicleta aluguel=${a1} estacao=${estacao2} data="5/1/2026 08:10"
+
+# corrida 2: cancelada em 10/1/2026 (nao entra no faturamento)
+a2=retirarBicicleta usuario=${usuario1} estacao=${estacao2} bicicleta=f1 data="10/1/2026 08:00"
+devolverBicicleta aluguel=${a2} estacao=${estacao2} data="10/1/2026 08:01"
+expect cancelado getAtributoAluguel aluguel=${a2} atributo=estado
+
+# corrida 3: finalizada em 15/1/2026, valor 3,00
+a3=retirarBicicleta usuario=${usuario1} estacao=${estacao2} bicicleta=f1 data="15/1/2026 08:00"
+devolverBicicleta aluguel=${a3} estacao=${estacao1} data="15/1/2026 08:06"
+
+# corrida 4: finalizada em 1/2/2026, valor 4,00
+a4=retirarBicicleta usuario=${usuario1} estacao=${estacao1} bicicleta=f1 data="1/2/2026 08:00"
+devolverBicicleta aluguel=${a4} estacao=${estacao2} data="1/2/2026 08:08"
+
+expect 8,00 getTotalFaturado dataInicial=1/1/2026 dataFinal=31/1/2026
+expect 12,00 getTotalFaturado dataInicial=1/1/2026 dataFinal=28/2/2026
+expect 5,00 getTotalFaturado dataInicial=5/1/2026 dataFinal=5/1/2026
+expect 0,00 getTotalFaturado dataInicial=16/1/2026 dataFinal=31/1/2026
+expect 0,00 getTotalFaturado dataInicial=1/3/2026 dataFinal=31/3/2026
+
+# ---- erros de validacao ----
+expectError "Data nao pode ser nula." getTotalFaturado dataInicial="" dataFinal=31/1/2026
+expectError "Data nao pode ser nula." getTotalFaturado dataInicial=1/1/2026 dataFinal=""
+expectError "Data invalida." getTotalFaturado dataInicial=31/2/2026 dataFinal=28/2/2026
+expectError "Data invalida." getTotalFaturado dataInicial=1/1/2026 dataFinal=abc
+expectError "Data final anterior a data inicial." getTotalFaturado dataInicial=31/1/2026 dataFinal=1/1/2026
+
+encerrarSistema
+quit

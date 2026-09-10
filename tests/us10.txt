@@ -1,0 +1,42 @@
+#####################################################################################
+# User Story 10 - Consulta de historico de alugueis
+#####################################################################################
+
+zerarSistema
+
+estacao1=criarEstacao nome="Estacao Norte" endereco="Av. Norte, 10" capacidade=5
+estacao2=criarEstacao nome="Estacao Sul" endereco="Av. Sul, 20" capacidade=5
+adicionarBicicleta estacao=${estacao1} bicicleta=h1 tipo=convencional
+adicionarBicicleta estacao=${estacao1} bicicleta=h2 tipo=convencional
+adicionarBicicleta estacao=${estacao1} bicicleta=h3 tipo=convencional
+
+usuario1=criarUsuario nome="Renata Costa" email="renata@exemplo.com" senha="123456" tipo=pessoaFisica cpf=400.500.600-70
+alterarUsuario usuario=${usuario1} atributo=metodoPagamento valor1=pix chave=renata@pix.com
+
+expect 0 getHistoricoAlugueis usuario=${usuario1}
+expect 0 getHistoricoAlugueis usuario=${usuario1} atributo=quantidade
+expect 0,00 getHistoricoAlugueis usuario=${usuario1} atributo=totalGasto
+
+a1=retirarBicicleta usuario=${usuario1} estacao=${estacao1} bicicleta=h1 data="1/7/2025 08:00"
+devolverBicicleta aluguel=${a1} estacao=${estacao2} data="1/7/2025 08:20"
+expect 1 getHistoricoAlugueis usuario=${usuario1}
+expect 10,00 getHistoricoAlugueis usuario=${usuario1} atributo=totalGasto
+
+a2=retirarBicicleta usuario=${usuario1} estacao=${estacao2} bicicleta=h1 data="1/7/2025 09:00"
+devolverBicicleta aluguel=${a2} estacao=${estacao1} data="1/7/2025 09:30"
+expect 2 getHistoricoAlugueis usuario=${usuario1} atributo=quantidade
+expect 25,00 getHistoricoAlugueis usuario=${usuario1} atributo=totalGasto
+
+# corrida cancelada tambem entra na contagem, mas nao no total gasto
+a3=retirarBicicleta usuario=${usuario1} estacao=${estacao1} bicicleta=h2 data="1/7/2025 10:00"
+devolverBicicleta aluguel=${a3} estacao=${estacao1} data="1/7/2025 10:01"
+expect cancelado getAtributoAluguel aluguel=${a3} atributo=estado
+expect 3 getHistoricoAlugueis usuario=${usuario1} atributo=quantidade
+expect 25,00 getHistoricoAlugueis usuario=${usuario1} atributo=totalGasto
+
+expectError "Identificacao do usuario nao pode ser nula." getHistoricoAlugueis usuario=""
+expectError "Usuario nao existe." getHistoricoAlugueis usuario=U999
+expectError "Atributo nao existe." getHistoricoAlugueis usuario=${usuario1} atributo=inexistente
+
+encerrarSistema
+quit

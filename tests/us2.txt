@@ -1,0 +1,38 @@
+#####################################################################################
+# User Story 2 - Consulta de usuario
+#####################################################################################
+
+zerarSistema
+
+id1=criarUsuario nome="Joana Prado" email="joana@exemplo.com" senha="123456" tipo=pessoaFisica cpf=100.200.300-40
+id2=criarUsuario nome="Loja Bikes ME" email="loja@exemplo.com" senha="654321" \
+	tipo=pessoaJuridica cnpj=11.222.333/0001-44 razaoSocial="Loja Bikes Comercio ME"
+
+# consulta basica de todos os atributos
+expect "Joana Prado" getAtributoUsuario usuario=${id1} atributo=nome
+expect joana@exemplo.com getAtributoUsuario usuario=${id1} atributo=email
+expect 123456 getAtributoUsuario usuario=${id1} atributo=senha
+expect ativo getAtributoUsuario usuario=${id1} atributo=estado
+expect nenhum getAtributoUsuario usuario=${id1} atributo=aluguelAtivo
+expect 0,00 getAtributoUsuario usuario=${id1} atributo=totalPendencias
+
+# metodo de pagamento ainda nao cadastrado
+expect nenhum getAtributoUsuario usuario=${id1} atributo=metodoPagamento
+expectError "Usuario nao usa cartao." getAtributoUsuario usuario=${id1} atributo=numeroCartao
+expectError "Usuario nao usa pix." getAtributoUsuario usuario=${id1} atributo=chavePix
+expectError "Usuario nao usa saldo pre-carregado." getAtributoUsuario usuario=${id1} atributo=saldo
+
+# busca por email
+expect ${id1} getUsuarioPorEmail email=joana@exemplo.com
+expect ${id2} getUsuarioPorEmail email=loja@exemplo.com
+expectError "Usuario nao existe." getUsuarioPorEmail email=ninguem@exemplo.com
+expectError "Email nao pode ser nulo." getUsuarioPorEmail email=""
+
+# erros gerais de consulta
+expectError "Identificacao do usuario nao pode ser nula." getAtributoUsuario usuario="" atributo=nome
+expectError "Usuario nao existe." getAtributoUsuario usuario=U999 atributo=nome
+expectError "Atributo nao existe." getAtributoUsuario usuario=${id1} atributo=inexistente
+expectError "Atributo nao existe." getAtributoUsuario usuario=${id1} atributo=""
+
+encerrarSistema
+quit

@@ -1,0 +1,76 @@
+#####################################################################################
+# User Story 8 - Retirada de bicicleta
+#####################################################################################
+
+zerarSistema
+
+estacao1=criarEstacao nome="Estacao Base" endereco="Rua Base, 1" capacidade=4
+estacao2=criarEstacao nome="Estacao Distante" endereco="Rua Distante, 2" capacidade=2
+
+adicionarBicicleta estacao=${estacao1} bicicleta=r1 tipo=convencional
+adicionarBicicleta estacao=${estacao1} bicicleta=r2 tipo=convencional
+adicionarBicicleta estacao=${estacao1} bicicleta=eletricaFraca tipo=eletrica nivelBateria=10
+adicionarBicicleta estacao=${estacao1} bicicleta=emManutTeste tipo=convencional
+adicionarBicicleta estacao=${estacao2} bicicleta=r3 tipo=convencional
+lancaDefeito bicicleta=emManutTeste descricao="Freio solto"
+# eletricaFraca (10% de bateria) e emManutTeste nao contam como disponiveis
+expect 2 getBicicletasDisponiveis estacao=${estacao1}
+
+usuario1=criarUsuario nome="Diego Farias" email="diego@exemplo.com" senha="123456" tipo=pessoaFisica cpf=111.111.111-11
+alterarUsuario usuario=${usuario1} atributo=metodoPagamento valor1=pix chave=diego@pix.com
+
+# ---- retirada com sucesso ----
+a1=retirarBicicleta usuario=${usuario1} estacao=${estacao1} bicicleta=r1 data="10/3/2025 08:00"
+expect emAndamento getAtributoAluguel aluguel=${a1} atributo=estado
+expect ${usuario1} getAtributoAluguel aluguel=${a1} atributo=usuario
+expect r1 getAtributoAluguel aluguel=${a1} atributo=bicicleta
+expect ${estacao1} getAtributoAluguel aluguel=${a1} atributo=estacaoOrigem
+expect "10/3/2025 8:00" getAtributoAluguel aluguel=${a1} atributo=inicio
+expect emUso getEstadoBicicleta bicicleta=r1
+expect ${a1} getAtributoUsuario usuario=${usuario1} atributo=aluguelAtivo
+expect 1 getBicicletasDisponiveis estacao=${estacao1}
+expectError "Aluguel ainda esta em andamento." getAtributoAluguel aluguel=${a1} atributo=valorCobrado
+expectError "Aluguel ainda esta em andamento." getAtributoAluguel aluguel=${a1} atributo=fim
+expectError "Aluguel ainda esta em andamento." getAtributoAluguel aluguel=${a1} atributo=estacaoDestino
+
+# ---- erros de validacao de entrada ----
+expectError "Identificacao do usuario nao pode ser nula." retirarBicicleta usuario="" estacao=${estacao1} bicicleta=r2 data="10/3/2025 08:00"
+expectError "Usuario nao existe." retirarBicicleta usuario=U999 estacao=${estacao1} bicicleta=r2 data="10/3/2025 08:00"
+expectError "Identificacao da estacao nao pode ser nula." retirarBicicleta usuario=${usuario1} estacao="" bicicleta=r2 data="10/3/2025 08:00"
+expectError "Estacao nao existe." retirarBicicleta usuario=${usuario1} estacao=E999 bicicleta=r2 data="10/3/2025 08:00"
+expectError "Identificacao da bicicleta nao pode ser nula." retirarBicicleta usuario=${usuario1} estacao=${estacao1} bicicleta="" data="10/3/2025 08:00"
+expectError "Bicicleta nao existe." retirarBicicleta usuario=${usuario1} estacao=${estacao1} bicicleta=bx999 data="10/3/2025 08:00"
+expectError "Data nao pode ser nula." retirarBicicleta usuario=${usuario1} estacao=${estacao1} bicicleta=r2 data=""
+expectError "Data invalida." retirarBicicleta usuario=${usuario1} estacao=${estacao1} bicicleta=r2 data="31/2/2025 08:00"
+expectError "Data invalida." retirarBicicleta usuario=${usuario1} estacao=${estacao1} bicicleta=r2 data="datainvalida"
+
+# ---- usuario ja possui aluguel em andamento ----
+expectError "Usuario ja possui um aluguel em andamento." retirarBicicleta usuario=${usuario1} estacao=${estacao1} bicicleta=r2 data="10/3/2025 08:05"
+
+usuario2=criarUsuario nome="Elis Gomes" email="elis@exemplo.com" senha="123456" tipo=pessoaFisica cpf=222.222.222-22
+alterarUsuario usuario=${usuario2} atributo=metodoPagamento valor1=pix chave=elis@pix.com
+
+# ---- bicicleta nao esta disponivel (em manutencao, embora ainda na estacao) ----
+expectError "Bicicleta nao esta disponivel." retirarBicicleta usuario=${usuario2} estacao=${estacao1} bicicleta=emManutTeste data="10/3/2025 08:05"
+
+# ---- bicicleta nao esta nesta estacao ----
+expectError "Bicicleta nao esta nesta estacao." retirarBicicleta usuario=${usuario2} estacao=${estacao1} bicicleta=r3 data="10/3/2025 08:05"
+
+# ---- bateria insuficiente (heranca/polimorfismo: so bicicleta eletrica valida isso) ----
+expectError "Nivel de bateria insuficiente." retirarBicicleta usuario=${usuario2} estacao=${estacao1} bicicleta=eletricaFraca data="10/3/2025 08:05"
+
+# ---- metodo de pagamento nao cadastrado ----
+usuario3=criarUsuario nome="Fabio Nery" email="fabio@exemplo.com" senha="123456" tipo=pessoaFisica cpf=333.333.333-33
+expectError "Metodo de pagamento nao cadastrado." retirarBicicleta usuario=${usuario3} estacao=${estacao1} bicicleta=r2 data="10/3/2025 08:05"
+
+# ---- usuario inadimplente nao pode retirar (US13 - regra de bloqueio) ----
+lancaPenalidade usuario=${usuario2} tipo=dano valor=30 motivo="Farol quebrado"
+expect inadimplente getAtributoUsuario usuario=${usuario2} atributo=estado
+expectError "Usuario inadimplente." retirarBicicleta usuario=${usuario2} estacao=${estacao1} bicicleta=r2 data="10/3/2025 08:05"
+
+# ---- estacao vazia: nenhuma bicicleta disponivel nela ----
+estacaoVazia=criarEstacao nome="Estacao Vazia" endereco="Rua Nova, 5" capacidade=2
+expectError "Bicicleta nao esta nesta estacao." retirarBicicleta usuario=${usuario3} estacao=${estacaoVazia} bicicleta=r2 data="10/3/2025 08:05"
+
+encerrarSistema
+quit

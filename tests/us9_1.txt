@@ -1,0 +1,14 @@
+#####################################################################################
+# User Story 9 - Devolucao de bicicleta (teste de persistencia)
+#####################################################################################
+
+expect finalizado getAtributoAluguel aluguel=A1 atributo=estado
+expect 5,00 getAtributoAluguel aluguel=A1 atributo=valorCobrado
+expect cancelado getAtributoAluguel aluguel=A6 atributo=estado
+expect expirado getAtributoAluguel aluguel=A8 atributo=estado
+expect emManutencao getEstadoBicicleta bicicleta=bc4
+expect inadimplente getAtributoUsuario usuario=U1 atributo=estado
+expect 10,00 getAtributoUsuario usuario=U1 atributo=totalPendencias
+
+encerrarSistema
+quit

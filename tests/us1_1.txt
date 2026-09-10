@@ -1,0 +1,15 @@
+#####################################################################################
+# User Story 1 - Cadastro de usuario (teste de persistencia)
+#####################################################################################
+
+expect "Ana Souza" getAtributoUsuario usuario=U1 atributo=nome
+expect avulso getAtributoUsuario usuario=U1 atributo=plano
+expect pessoaJuridica getAtributoUsuario usuario=U2 atributo=tipo
+expect "Bike Corp Ltda" getAtributoUsuario usuario=U2 atributo=razaoSocial
+expect assinante getAtributoUsuario usuario=U3 atributo=plano
+expect 50,00 getAtributoUsuario usuario=U3 atributo=mensalidade
+expect 120,50 getAtributoUsuario usuario=U4 atributo=mensalidade
+expectError "Usuario nao existe." getAtributoUsuario usuario=U999 atributo=nome
+
+encerrarSistema
+quit

@@ -1,0 +1,10 @@
+#####################################################################################
+# User Story 5 - Cadastro de estacao (teste de persistencia)
+#####################################################################################
+
+expect 10 getVagasDisponiveis estacao=E1
+expect 5 getVagasDisponiveis estacao=E2
+expectError "Estacao nao existe." getVagasDisponiveis estacao=E999
+
+encerrarSistema
+quit
