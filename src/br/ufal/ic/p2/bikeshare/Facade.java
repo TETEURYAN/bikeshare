@@ -1,15 +1,7 @@
 package br.ufal.ic.p2.bikeshare;
 
 /**
- * Unico ponto de entrada da logica de negocio, acessado pelo EasyAccept via
- * reflexao. Este e o TEMPLATE distribuido aos alunos: nenhum metodo faz nada
- * alem de sinalizar que ainda precisa ser implementado — nao ha classes de
- * modelo, nao ha calculo de tarifa, nao ha persistencia. E esperado que, ao
- * rodar Main.java sobre este template, TODOS os testes de aceitacao falhem.
- *
- * As assinaturas (incluindo as sobrecargas) seguem exatamente o contrato
- * descrito no CLAUDE.md, Secao 4, e correspondem aos comandos usados nos
- * scripts em tests/*.txt.
+ Facade
  */
 public class Facade {
 
