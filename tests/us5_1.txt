@@ -5,6 +5,15 @@
 expect 10 getVagasDisponiveis estacao=E1
 expect 5 getVagasDisponiveis estacao=E2
 expectError "Estacao nao existe." getVagasDisponiveis estacao=E999
+expect 3 getVagasDisponiveis estacao=E3
+expect 1 getVagasDisponiveis estacao=E4
+expect 0 getBicicletasDisponiveis estacao=E4
+expectError "Estacao nao existe." getVagasDisponiveis estacao=E5
+
+# o contador de ids tambem sobrevive ao encerramento
+id5=criarEstacao nome="Estacao Pos-Reinicio" endereco="Rua Nova, 9" capacidade=2
+expect E5 echo ${id5}
+expect 2 getVagasDisponiveis estacao=${id5}
 
 encerrarSistema
 quit

@@ -9,6 +9,11 @@ expect "Bike Corp Ltda" getAtributoUsuario usuario=U2 atributo=razaoSocial
 expect assinante getAtributoUsuario usuario=U3 atributo=plano
 expect 50,00 getAtributoUsuario usuario=U3 atributo=mensalidade
 expect 120,50 getAtributoUsuario usuario=U4 atributo=mensalidade
+expect avulso getAtributoUsuario usuario=U5 atributo=plano
+expect 0,00 getAtributoUsuario usuario=U6 atributo=mensalidade
+expect pessoaJuridica getAtributoUsuario usuario=U7 atributo=tipo
+expect "Pedal Comercio Ltda" getAtributoUsuario usuario=U7 atributo=razaoSocial
+expectError "Usuario nao existe." getAtributoUsuario usuario=U8 atributo=nome
 expectError "Usuario nao existe." getAtributoUsuario usuario=U999 atributo=nome
 
 encerrarSistema

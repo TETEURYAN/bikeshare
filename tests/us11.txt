@@ -40,5 +40,38 @@ expectError "Plano nao possui mensalidade." getAtributoUsuario usuario=${usuario
 expectError "Plano invalido." alterarUsuario usuario=${usuario1} atributo=plano valor=platina
 expectError "Plano invalido." alterarUsuario usuario=${usuario1} atributo=plano valor=""
 
+# ---- (refatorado) a mensalidade contratada nao muda a tarifa: franquia 60 e excedente 0,30 sao fixos ----
+usuario2=criarUsuario nome="Vera Lucia" email="vera@exemplo.com" senha="123456" tipo=pessoaFisica cpf=500.600.700-81 \
+	plano=assinante mensalidade=99
+alterarUsuario usuario=${usuario2} atributo=metodoPagamento valor1=pix chave=vera@pix.com
+a4=retirarBicicleta usuario=${usuario2} estacao=${estacao2} bicicleta=p1 data="2/8/2025 08:00"
+devolverBicicleta aluguel=${a4} estacao=${estacao1} data="2/8/2025 09:10"
+expect 3,00 getAtributoAluguel aluguel=${a4} atributo=valorCobrado
+
+# ---- (refatorado) avulso com 0 minuto em outra estacao: nada a pagar ----
+a5=retirarBicicleta usuario=${usuario1} estacao=${estacao1} bicicleta=p1 data="3/8/2025 08:00"
+devolverBicicleta aluguel=${a5} estacao=${estacao2} data="3/8/2025 08:00"
+expect finalizado getAtributoAluguel aluguel=${a5} atributo=estado
+expect 0,00 getAtributoAluguel aluguel=${a5} atributo=valorCobrado
+
+# ---- (refatorado) assinante com 24h exatas: (1440 - 60) * 0,30 = 414,00 ----
+a6=retirarBicicleta usuario=${usuario2} estacao=${estacao2} bicicleta=p1 data="4/8/2025 08:00"
+devolverBicicleta aluguel=${a6} estacao=${estacao1} data="5/8/2025 08:00"
+expect finalizado getAtributoAluguel aluguel=${a6} atributo=estado
+expect 414,00 getAtributoAluguel aluguel=${a6} atributo=valorCobrado
+
+# ---- (refatorado) heranca de Usuario: pessoa juridica assinante paga o mesmo que pessoa fisica ----
+usuarioPJ=criarUsuario nome="Frota Rapida" email="frotarapida@exemplo.com" senha="123456" \
+	tipo=pessoaJuridica cnpj=30.303.030/0001-30 razaoSocial="Frota Rapida SA" plano=assinante mensalidade=200
+alterarUsuario usuario=${usuarioPJ} atributo=metodoPagamento valor1=pix chave=frota@pix.com
+a7=retirarBicicleta usuario=${usuarioPJ} estacao=${estacao1} bicicleta=p1 data="6/8/2025 08:00"
+devolverBicicleta aluguel=${a7} estacao=${estacao2} data="6/8/2025 09:10"
+expect 3,00 getAtributoAluguel aluguel=${a7} atributo=valorCobrado
+
+# ---- (refatorado) nome do plano diferencia maiusculas; so espacos e invalido ----
+expectError "Plano invalido." alterarUsuario usuario=${usuario1} atributo=plano valor=Assinante
+expectError "Plano invalido." alterarUsuario usuario=${usuario1} atributo=plano valor="   "
+expect avulso getAtributoUsuario usuario=${usuario1} atributo=plano
+
 encerrarSistema
 quit

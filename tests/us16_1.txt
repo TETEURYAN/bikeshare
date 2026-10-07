@@ -1,0 +1,19 @@
+#####################################################################################
+# User Story 16 - Undo/redo (teste de persistencia)
+#####################################################################################
+
+# o historico de undo/redo vive so na memoria: depois de reiniciar nao ha o que desfazer/refazer
+expectError "Nao ha comando a desfazer." undo
+expectError "Nao ha comando a refazer." redo
+# o estado salvo e o do momento do encerramento
+expect "Marina Nova" getAtributoUsuario usuario=U2 atributo=nome
+expectError "Bicicleta nao existe." getEstadoBicicleta bicicleta=bikeU2
+# um comando novo apos o reinicio pode ser desfeito normalmente
+alterarUsuario usuario=U2 atributo=plano valor=undoPlano
+expect undoPlano getAtributoUsuario usuario=U2 atributo=plano
+undo
+expect avulso getAtributoUsuario usuario=U2 atributo=plano
+expectError "Nao ha comando a desfazer." undo
+
+encerrarSistema
+quit

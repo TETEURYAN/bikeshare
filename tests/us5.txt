@@ -21,11 +21,49 @@ expectError "Capacidade deve ser numerica." criarEstacao nome="Estacao Y" endere
 expectError "Capacidade deve ser positiva." criarEstacao nome="Estacao Y" endereco="Rua X, 1" capacidade=0
 expectError "Capacidade deve ser positiva." criarEstacao nome="Estacao Y" endereco="Rua X, 1" capacidade=-3
 
+# (refatorado) o identificador e quem distingue estacoes: nomes repetidos sao permitidos
+idRep=criarEstacao nome="Estacao Central" endereco="Outro lugar, 2" capacidade=3
+expectDifferent ${id1} echo ${idRep}
+expect 3 getVagasDisponiveis estacao=${idRep}
+expect 10 getVagasDisponiveis estacao=${id1}
+
 # erros de consulta de disponibilidade
 expectError "Identificacao da estacao nao pode ser nula." getVagasDisponiveis estacao=""
 expectError "Estacao nao existe." getVagasDisponiveis estacao=E999
 expectError "Identificacao da estacao nao pode ser nula." getBicicletasDisponiveis estacao=""
 expectError "Estacao nao existe." getBicicletasDisponiveis estacao=E999
+
+# ---- (refatorado) campos so com espacos contam como vazios ----
+expectError "Nome nao pode ser nulo." criarEstacao nome="   " endereco="Rua X, 1" capacidade=5
+expectError "Endereco nao pode ser nulo." criarEstacao nome="Estacao Y" endereco="   " capacidade=5
+expectError "Capacidade nao pode ser nula." criarEstacao nome="Estacao Y" endereco="Rua X, 1" capacidade="   "
+
+# ---- (refatorado) capacidade: so inteiros; decimal com ponto tambem e invalido ----
+expectError "Capacidade deve ser numerica." criarEstacao nome="Estacao Y" endereco="Rua X, 1" capacidade=5.0
+expectError "Capacidade deve ser numerica." criarEstacao nome="Estacao Y" endereco="Rua X, 1" capacidade=1e3
+expectError "Capacidade deve ser numerica." criarEstacao nome="Estacao Y" endereco="Rua X, 1" capacidade=cinco
+
+# ---- (refatorado) ordem das validacoes: nome, endereco, capacidade ----
+expectError "Nome nao pode ser nulo." criarEstacao nome="" endereco="" capacidade=abc
+expectError "Endereco nao pode ser nulo." criarEstacao nome="Estacao Y" endereco="" capacidade=abc
+expectError "Capacidade nao pode ser nula." criarEstacao nome="Estacao Y" endereco="Rua X, 1" capacidade=""
+
+# ---- (refatorado) capacidade minima (1) e valida ----
+idMin=criarEstacao nome="Estacao Minima" endereco="Beco, 1" capacidade=1
+expect 1 getVagasDisponiveis estacao=${idMin}
+expect 0 getBicicletasDisponiveis estacao=${idMin}
+
+# ---- (refatorado) identificadores sequenciais: cadastros recusados nao consomem id ----
+expect E1 echo ${id1}
+expect E2 echo ${id2}
+expect E3 echo ${idRep}
+expect E4 echo ${idMin}
+
+# ---- (refatorado) consulta com identificacao so com espacos ----
+expectError "Identificacao da estacao nao pode ser nula." getVagasDisponiveis estacao="   "
+expectError "Identificacao da estacao nao pode ser nula." getBicicletasDisponiveis estacao="   "
+# o identificador de estacao e de usuario nao se confundem
+expectError "Estacao nao existe." getVagasDisponiveis estacao=U1
 
 encerrarSistema
 quit

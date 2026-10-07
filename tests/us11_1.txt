@@ -5,5 +5,10 @@
 expect avulso getAtributoUsuario usuario=U1 atributo=plano
 expect 0,30 getAtributoAluguel aluguel=A3 atributo=valorCobrado
 
+expect 99,00 getAtributoUsuario usuario=U2 atributo=mensalidade
+expect 414,00 getAtributoAluguel aluguel=A6 atributo=valorCobrado
+expect 3,00 getAtributoAluguel aluguel=A7 atributo=valorCobrado
+expect 200,00 getAtributoUsuario usuario=U3 atributo=mensalidade
+
 encerrarSistema
 quit

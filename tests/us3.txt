@@ -33,6 +33,11 @@ expectError "Atributo nao pode ser alterado." alterarUsuario usuario=${id1} atri
 expectError "Identificacao do usuario nao pode ser nula." alterarUsuario usuario="" atributo=nome valor=x
 expectError "Usuario nao existe." alterarUsuario usuario=U999 atributo=nome valor=x
 
+# ---- (refatorado) alterar email para o proprio email e conflito ignorando maiusculas ----
+alterarUsuario usuario=${id1} atributo=email valor=pedroh@exemplo.com
+expect pedroh@exemplo.com getAtributoUsuario usuario=${id1} atributo=email
+expectError "Email ja cadastrado." alterarUsuario usuario=${id1} atributo=email valor=RITA@exemplo.com
+
 # ---- metodo de pagamento: cartao ----
 alterarUsuario usuario=${id1} atributo=metodoPagamento valor1=cartao numero=1234-5678-9012-3456 validade=12/2028
 expect cartao getAtributoUsuario usuario=${id1} atributo=metodoPagamento
@@ -56,16 +61,12 @@ expectError "Chave pix nao pode ser nula." alterarUsuario usuario=${id1} atribut
 expectError "Valor de metodo de pagamento invalido." alterarUsuario usuario=${id1} atributo=metodoPagamento valor1=boleto chave=x
 
 # ---- metodo de pagamento: saldo pre-carregado (heranca/polimorfismo de MetodoPagamento) ----
-estacao1=criarEstacao nome="Estacao Central" endereco="Praca Central, 1" capacidade=5
-estacao2=criarEstacao nome="Estacao Norte" endereco="Av. Norte, 100" capacidade=5
-adicionarBicicleta estacao=${estacao1} bicicleta=bikeSaldo1 tipo=convencional
-
+# (refatorado) o trecho que usava retirada/devolucao foi movido para us8.txt e us9.txt
 alterarUsuario usuario=${id1} atributo=metodoPagamento valor1=saldoPreCarregado
 expect saldoPreCarregado getAtributoUsuario usuario=${id1} atributo=metodoPagamento
 expect 0,00 getAtributoUsuario usuario=${id1} atributo=saldo
-# saldo insuficiente logo na retirada: SaldoPreCarregado nao autoriza sem fundos
-# (Cartao/Pix, no mesmo cenario, nunca dariam esse erro - so aprovam sempre)
-expectError "Saldo insuficiente." retirarBicicleta usuario=${id1} estacao=${estacao1} bicicleta=bikeSaldo1 data="10/3/2025 08:00"
+expectError "Usuario nao usa cartao." getAtributoUsuario usuario=${id1} atributo=numeroCartao
+expectError "Usuario nao usa pix." getAtributoUsuario usuario=${id1} atributo=chavePix
 
 expectError "Usuario nao usa saldo pre-carregado." alterarUsuario usuario=${id2} atributo=saldo valor=50
 expectError "Valor nao pode ser nulo." alterarUsuario usuario=${id1} atributo=saldo valor=""
@@ -73,14 +74,105 @@ expectError "Valor deve ser numerico." alterarUsuario usuario=${id1} atributo=sa
 expectError "Valor deve ser positivo." alterarUsuario usuario=${id1} atributo=saldo valor=0
 expectError "Valor deve ser positivo." alterarUsuario usuario=${id1} atributo=saldo valor=-10
 
+# (refatorado) a recarga e acumulativa
 alterarUsuario usuario=${id1} atributo=saldo valor=100
 expect 100,00 getAtributoUsuario usuario=${id1} atributo=saldo
-a1=retirarBicicleta usuario=${id1} estacao=${estacao1} bicicleta=bikeSaldo1 data="10/3/2025 08:00"
-devolverBicicleta aluguel=${a1} estacao=${estacao2} data="10/3/2025 08:10"
-# 10 minutos de plano avulso: 10 * 0,50 = 5,00, debitados do saldo
-expect 95,00 getAtributoUsuario usuario=${id1} atributo=saldo
-expect finalizado getAtributoAluguel aluguel=${a1} atributo=estado
-expect 5,00 getAtributoAluguel aluguel=${a1} atributo=valorCobrado
+alterarUsuario usuario=${id1} atributo=saldo valor=50
+expect 150,00 getAtributoUsuario usuario=${id1} atributo=saldo
+alterarUsuario usuario=${id1} atributo=saldo valor=25,5
+expect 175,50 getAtributoUsuario usuario=${id1} atributo=saldo
+
+# ---- (refatorado) trocar o metodo de pagamento nao zera o saldo pre-carregado ----
+id3=criarUsuario nome="Tiago Sena" email="tiago@exemplo.com" senha="123456" tipo=pessoaFisica cpf=300.100.200-30
+alterarUsuario usuario=${id3} atributo=metodoPagamento valor1=saldoPreCarregado
+alterarUsuario usuario=${id3} atributo=saldo valor=40
+alterarUsuario usuario=${id3} atributo=metodoPagamento valor1=pix chave=tiago@pix.com
+expect pix getAtributoUsuario usuario=${id3} atributo=metodoPagamento
+expectError "Usuario nao usa saldo pre-carregado." getAtributoUsuario usuario=${id3} atributo=saldo
+expectError "Usuario nao usa saldo pre-carregado." alterarUsuario usuario=${id3} atributo=saldo valor=10
+alterarUsuario usuario=${id3} atributo=metodoPagamento valor1=saldoPreCarregado
+expect saldoPreCarregado getAtributoUsuario usuario=${id3} atributo=metodoPagamento
+expect 40,00 getAtributoUsuario usuario=${id3} atributo=saldo
+
+# ---- (refatorado) campos so com espacos contam como vazios e a alteracao recusada nao muda nada ----
+expectError "Nome nao pode ser nulo." alterarUsuario usuario=${id1} atributo=nome valor="   "
+expectError "Email nao pode ser nulo." alterarUsuario usuario=${id1} atributo=email valor="   "
+expectError "Senha nao pode ser nula." alterarUsuario usuario=${id1} atributo=senha valor="   "
+expect "Pedro Henrique Alves" getAtributoUsuario usuario=${id1} atributo=nome
+expect pedroh@exemplo.com getAtributoUsuario usuario=${id1} atributo=email
+expect novaSenha1 getAtributoUsuario usuario=${id1} atributo=senha
+
+# ---- (refatorado) atributos controlados pelo sistema nao podem ser alterados ----
+expectError "Atributo nao pode ser alterado." alterarUsuario usuario=${id1} atributo=tipo valor=pessoaJuridica
+expectError "Atributo nao pode ser alterado." alterarUsuario usuario=${id1} atributo=estado valor=inadimplente
+expectError "Atributo nao pode ser alterado." alterarUsuario usuario=${id1} atributo=totalPendencias valor=0
+expectError "Atributo nao pode ser alterado." alterarUsuario usuario=${id1} atributo=aluguelAtivo valor=A1
+expectError "Atributo nao pode ser alterado." alterarUsuario usuario=${id1} atributo="" valor=x
+expectError "Atributo nao pode ser alterado." alterarUsuario usuario=${id1} atributo=nome valor1=pix chave=x
+expect ativo getAtributoUsuario usuario=${id1} atributo=estado
+expect pessoaFisica getAtributoUsuario usuario=${id1} atributo=tipo
+# o usuario e conferido antes do atributo
+expectError "Usuario nao existe." alterarUsuario usuario=U999 atributo=idade valor=30
+expectError "Identificacao do usuario nao pode ser nula." alterarUsuario usuario="" atributo=idade valor=30
+
+# ---- (refatorado) variacoes invalidas de metodo de pagamento (usuario sem metodo continua sem) ----
+expectError "Valor de metodo de pagamento invalido." alterarUsuario usuario=${id2} atributo=metodoPagamento valor1=boleto
+expectError "Valor de metodo de pagamento invalido." alterarUsuario usuario=${id2} atributo=metodoPagamento valor1=cartao
+expectError "Valor de metodo de pagamento invalido." alterarUsuario usuario=${id2} atributo=metodoPagamento valor1=cartao chave=abc
+expectError "Valor de metodo de pagamento invalido." alterarUsuario usuario=${id2} atributo=metodoPagamento valor1=saldoPreCarregado chave=abc
+expectError "Valor de metodo de pagamento invalido." alterarUsuario usuario=${id2} atributo=metodoPagamento valor1=pix numero=1111 validade=12/2028
+expectError "Chave pix nao pode ser nula." alterarUsuario usuario=${id2} atributo=metodoPagamento valor1=pix chave="   "
+expectError "Numero do cartao nao pode ser nulo." alterarUsuario usuario=${id2} atributo=metodoPagamento valor1=cartao numero="   " validade=12/2028
+expectError "Validade do cartao invalida." alterarUsuario usuario=${id2} atributo=metodoPagamento valor1=cartao numero=1111 validade=00/2028
+expectError "Validade do cartao invalida." alterarUsuario usuario=${id2} atributo=metodoPagamento valor1=cartao numero=1111 validade=12-2028
+expectError "Validade do cartao invalida." alterarUsuario usuario=${id2} atributo=metodoPagamento valor1=cartao numero=1111 validade=abc
+expect nenhum getAtributoUsuario usuario=${id2} atributo=metodoPagamento
+
+# ---- (refatorado) trocar de cartao substitui numero e validade ----
+alterarUsuario usuario=${id2} atributo=metodoPagamento valor1=cartao numero=1111-2222-3333-4444 validade=01/2030
+alterarUsuario usuario=${id2} atributo=metodoPagamento valor1=cartao numero=5555-6666-7777-8888 validade=02/2031
+expect cartao getAtributoUsuario usuario=${id2} atributo=metodoPagamento
+expect 5555-6666-7777-8888 getAtributoUsuario usuario=${id2} atributo=numeroCartao
+expect 02/2031 getAtributoUsuario usuario=${id2} atributo=validadeCartao
+
+# ---- (refatorado) escolher saldoPreCarregado de novo nao zera o saldo ----
+alterarUsuario usuario=${id3} atributo=metodoPagamento valor1=saldoPreCarregado
+expect 40,00 getAtributoUsuario usuario=${id3} atributo=saldo
+
+# ---- (refatorado) alteracao de pessoa juridica ----
+id4=criarUsuario nome="Cicla SA" email="cicla@exemplo.com" senha="abc123" \
+	tipo=pessoaJuridica cnpj=77.777.777/0001-77 razaoSocial="Cicla Servicos SA"
+alterarUsuario usuario=${id4} atributo=nome valor="Cicla Brasil SA"
+alterarUsuario usuario=${id4} atributo=email valor=brasil@cicla.com
+alterarUsuario usuario=${id4} atributo=senha valor=x9
+alterarUsuario usuario=${id4} atributo=plano valor=assinante
+expect "Cicla Brasil SA" getAtributoUsuario usuario=${id4} atributo=nome
+expect brasil@cicla.com getAtributoUsuario usuario=${id4} atributo=email
+expect x9 getAtributoUsuario usuario=${id4} atributo=senha
+expect assinante getAtributoUsuario usuario=${id4} atributo=plano
+expect 30,00 getAtributoUsuario usuario=${id4} atributo=mensalidade
+# o que nao foi alterado continua igual
+expect pessoaJuridica getAtributoUsuario usuario=${id4} atributo=tipo
+expect 77.777.777/0001-77 getAtributoUsuario usuario=${id4} atributo=cnpj
+expect "Cicla Servicos SA" getAtributoUsuario usuario=${id4} atributo=razaoSocial
+
+# ---- (refatorado) apos alterar o email, a busca usa o novo e o antigo fica livre ----
+expect ${id4} getUsuarioPorEmail email=brasil@cicla.com
+expectError "Usuario nao existe." getUsuarioPorEmail email=cicla@exemplo.com
+id5=criarUsuario nome="Lia Pontes" email="lia@exemplo.com" senha="123456" tipo=pessoaFisica cpf=300.200.100-90 \
+	plano=assinante mensalidade=50
+id6=criarUsuario nome="Novo Dono" email="cicla@exemplo.com" senha="123456" tipo=pessoaFisica cpf=310.210.110-91
+expect ${id6} getUsuarioPorEmail email=cicla@exemplo.com
+expectError "Email ja cadastrado." alterarUsuario usuario=${id4} atributo=email valor=cicla@exemplo.com
+
+# ---- (refatorado) escolher o plano que o usuario ja tem preserva a mensalidade contratada ----
+alterarUsuario usuario=${id5} atributo=plano valor=assinante
+expect 50,00 getAtributoUsuario usuario=${id5} atributo=mensalidade
+alterarUsuario usuario=${id5} atributo=plano valor=avulso
+alterarUsuario usuario=${id5} atributo=plano valor=avulso
+expect avulso getAtributoUsuario usuario=${id5} atributo=plano
+alterarUsuario usuario=${id5} atributo=plano valor=assinante
+expect 30,00 getAtributoUsuario usuario=${id5} atributo=mensalidade
 
 encerrarSistema
 quit
