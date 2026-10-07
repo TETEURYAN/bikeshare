@@ -43,5 +43,63 @@ a2=retirarBicicleta usuario=${usuario1} estacao=${estacao2} bicicleta=pp1 data="
 devolverBicicleta aluguel=${a2} estacao=${estacao1} data="1/9/2025 09:40"
 expect 4,00 getAtributoAluguel aluguel=${a2} atributo=valorCobrado
 
+# ---- (refatorado) campos so com espacos e franquia decimal ----
+expectError "Nome do plano nao pode ser nulo." criarPlano nome="   " franquiaMinutos=30 valorMinutoExcedente=0,40 mensalidade=60
+expectError "Franquia nao pode ser nula." criarPlano nome=basico franquiaMinutos="   " valorMinutoExcedente=0,40 mensalidade=60
+expectError "Franquia deve ser numerica." criarPlano nome=basico franquiaMinutos=30,5 valorMinutoExcedente=0,40 mensalidade=60
+expectError "Valor do minuto excedente nao pode ser nulo." criarPlano nome=basico franquiaMinutos=30 valorMinutoExcedente="   " mensalidade=60
+expectError "Mensalidade nao pode ser nula." criarPlano nome=basico franquiaMinutos=30 valorMinutoExcedente=0,40 mensalidade="   "
+
+# ---- (refatorado) ordem das validacoes: nome, franquia, excedente, mensalidade ----
+expectError "Plano ja existe." criarPlano nome=premium franquiaMinutos=abc valorMinutoExcedente=abc mensalidade=abc
+expectError "Franquia deve ser numerica." criarPlano nome=basico franquiaMinutos=abc valorMinutoExcedente=abc mensalidade=abc
+expectError "Valor do minuto excedente deve ser numerico." criarPlano nome=basico franquiaMinutos=10 valorMinutoExcedente=abc mensalidade=abc
+expectError "Mensalidade deve ser numerica." criarPlano nome=basico franquiaMinutos=10 valorMinutoExcedente=0,10 mensalidade=abc
+
+# ---- (refatorado) fronteiras aceitas: franquia 0, excedente 0, mensalidade 0 ----
+plano2=criarPlano nome=semFranquia franquiaMinutos=0 valorMinutoExcedente=0,25 mensalidade=0
+plano3=criarPlano nome=livre franquiaMinutos=0 valorMinutoExcedente=0 mensalidade=99,90
+expect semFranquia echo ${plano2}
+expect livre echo ${plano3}
+
+# ---- (refatorado) criar um plano nao muda o plano de ninguem ----
+expect premium getAtributoUsuario usuario=${usuario1} atributo=plano
+
+# ---- (refatorado) o mesmo plano customizado pode ser usado por varios usuarios (45 min: 15 * 0,40) ----
+usuario2=criarUsuario nome="Wilma Souto" email="wilma@exemplo.com" senha="123456" tipo=pessoaFisica cpf=800.700.600-51
+alterarUsuario usuario=${usuario2} atributo=metodoPagamento valor1=pix chave=wilma@pix.com
+alterarUsuario usuario=${usuario2} atributo=plano valor=premium
+expect 60,00 getAtributoUsuario usuario=${usuario2} atributo=mensalidade
+a3=retirarBicicleta usuario=${usuario2} estacao=${estacao1} bicicleta=pp1 data="2/9/2025 08:00"
+devolverBicicleta aluguel=${a3} estacao=${estacao2} data="2/9/2025 08:45"
+expect 6,00 getAtributoAluguel aluguel=${a3} atributo=valorCobrado
+
+# ---- (refatorado) polimorfismo de Bicicleta com plano customizado: 10 * 0,40 + 40 * 0,20 = 12,00 ----
+adicionarBicicleta estacao=${estacao1} bicicleta=ppE tipo=eletrica nivelBateria=90
+a4=retirarBicicleta usuario=${usuario1} estacao=${estacao1} bicicleta=ppE data="3/9/2025 08:00"
+devolverBicicleta aluguel=${a4} estacao=${estacao2} data="3/9/2025 08:40"
+expect 12,00 getAtributoAluguel aluguel=${a4} atributo=valorCobrado
+
+# ---- (refatorado) plano sem franquia cobra desde o primeiro minuto (10 * 0,25) ----
+alterarUsuario usuario=${usuario2} atributo=plano valor=semFranquia
+expect 0,00 getAtributoUsuario usuario=${usuario2} atributo=mensalidade
+a5=retirarBicicleta usuario=${usuario2} estacao=${estacao2} bicicleta=pp1 data="4/9/2025 08:00"
+devolverBicicleta aluguel=${a5} estacao=${estacao1} data="4/9/2025 08:10"
+expect 2,50 getAtributoAluguel aluguel=${a5} atributo=valorCobrado
+
+# ---- (refatorado) plano com excedente 0: nada a pagar, mesmo em 2h ----
+alterarUsuario usuario=${usuario1} atributo=plano valor=livre
+expect 99,90 getAtributoUsuario usuario=${usuario1} atributo=mensalidade
+a6=retirarBicicleta usuario=${usuario1} estacao=${estacao1} bicicleta=pp1 data="5/9/2025 08:00"
+devolverBicicleta aluguel=${a6} estacao=${estacao2} data="5/9/2025 10:00"
+expect 0,00 getAtributoAluguel aluguel=${a6} atributo=valorCobrado
+
+# ---- (refatorado) sair do customizado para o avulso e voltar: o plano customizado continua existindo ----
+alterarUsuario usuario=${usuario1} atributo=plano valor=avulso
+expectError "Plano nao possui mensalidade." getAtributoUsuario usuario=${usuario1} atributo=mensalidade
+alterarUsuario usuario=${usuario1} atributo=plano valor=premium
+expect premium getAtributoUsuario usuario=${usuario1} atributo=plano
+expect 60,00 getAtributoUsuario usuario=${usuario1} atributo=mensalidade
+
 encerrarSistema
 quit

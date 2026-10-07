@@ -69,5 +69,52 @@ expectError "Identificacao do usuario nao pode ser nula." getAtributoUsuario usu
 expectError "Usuario nao existe." getAtributoUsuario usuario=abc atributo=nome
 expectError "Atributo nao existe." getAtributoUsuario usuario=${id1} atributo=abc
 
+# ---- (refatorado) plano avulso informado explicitamente ----
+id5=criarUsuario nome="Duda Reis" email="duda@exemplo.com" senha="123456" tipo=pessoaFisica cpf=888.999.000-11 plano=avulso mensalidade=""
+expect avulso getAtributoUsuario usuario=${id5} atributo=plano
+expectError "Plano nao possui mensalidade." criarUsuario nome="X" email="x13@x.com" senha="123456" tipo=pessoaFisica cpf=999.000.111-22 plano=avulso mensalidade=10
+
+# ---- (refatorado) tipo incompativel com os parametros informados ----
+expectError "Tipo invalido." criarUsuario nome="X" email="x14@x.com" senha="123456" tipo=pessoaJuridica cpf=111.222.333-44
+expectError "Tipo invalido." criarUsuario nome="X" email="x15@x.com" senha="123456" tipo=pessoaJuridica cpf=111.222.333-44 plano=assinante mensalidade=10
+expectError "Tipo invalido." criarUsuario nome="X" email="x16@x.com" senha="123456" tipo=pessoaFisica cnpj=12.345.678/0001-99 razaoSocial="X Ltda" plano=assinante mensalidade=10
+
+# ---- (refatorado) email duplicado ignora maiusculas/minusculas ----
+expectError "Email ja cadastrado." criarUsuario nome="Ana Clone" email="ANA@exemplo.com" senha="123456" tipo=pessoaFisica cpf=123.456.789-00
+
+# ---- (refatorado) identificadores sequenciais: cadastros recusados nao consomem id ----
+# (dezenas de criarUsuario com erro aconteceram acima e os ids continuam U1, U2, ...)
+expect U1 echo ${id1}
+expect U2 echo ${id2}
+expect U3 echo ${id3}
+expect U4 echo ${id4}
+expect U5 echo ${id5}
+
+# ---- (refatorado) campos preenchidos so com espacos contam como vazios ----
+expectError "Nome nao pode ser nulo." criarUsuario nome="   " email="y1@x.com" senha="123456" tipo=pessoaFisica cpf=111.222.333-44
+expectError "Senha nao pode ser nula." criarUsuario nome="X" email="y2@x.com" senha="   " tipo=pessoaFisica cpf=111.222.333-44
+
+# ---- (refatorado) tipo diferencia maiusculas de minusculas ----
+expectError "Tipo invalido." criarUsuario nome="X" email="y3@x.com" senha="123456" tipo=PessoaFisica cpf=111.222.333-44
+
+# ---- (refatorado) plano vazio ou desconhecido, tambem para pessoa juridica ----
+expectError "Plano invalido." criarUsuario nome="X" email="y4@x.com" senha="123456" tipo=pessoaFisica cpf=111.222.333-44 plano="" mensalidade=""
+expectError "Plano invalido." criarUsuario nome="X" email="y5@x.com" senha="123456" tipo=pessoaJuridica cnpj=44.444.444/0001-44 razaoSocial="X Ltda" plano=vip mensalidade=10
+
+# ---- (refatorado) mensalidade zero e valida (nao-negativa) ----
+id6=criarUsuario nome="Eva Souza" email="eva@exemplo.com" senha="123456" tipo=pessoaFisica cpf=010.020.030-40 plano=assinante mensalidade=0
+expect assinante getAtributoUsuario usuario=${id6} atributo=plano
+expect 0,00 getAtributoUsuario usuario=${id6} atributo=mensalidade
+expect U6 echo ${id6}
+
+# ---- (refatorado) pessoa juridica: plano avulso explicito e email duplicado ----
+id7=criarUsuario nome="Pedal Ltda" email="pedal@exemplo.com" senha="123456" \
+	tipo=pessoaJuridica cnpj=66.666.666/0001-66 razaoSocial="Pedal Comercio Ltda" plano=avulso mensalidade=""
+expect avulso getAtributoUsuario usuario=${id7} atributo=plano
+expect pessoaJuridica getAtributoUsuario usuario=${id7} atributo=tipo
+expect U7 echo ${id7}
+expectError "Email ja cadastrado." criarUsuario nome="Outra Corp" email="contato@bikecorp.com" senha="123456" \
+	tipo=pessoaJuridica cnpj=55.555.555/0001-55 razaoSocial="Outra Corp"
+
 encerrarSistema
 quit

@@ -5,5 +5,13 @@
 expect disponivel getEstadoBicicleta bicicleta=m1
 expect emUso getEstadoBicicleta bicicleta=m2
 
+expect emManutencao getEstadoBicicleta bicicleta=mR
+expect emUso getEstadoBicicleta bicicleta=mx
+expect disponivel getEstadoBicicleta bicicleta=be10
+# a manutencao iniciada antes do reinicio pode ser concluida depois dele
+concluiManutencao bicicleta=mR
+expect disponivel getEstadoBicicleta bicicleta=mR
+expect 2 getBicicletasDisponiveis estacao=E1
+
 encerrarSistema
 quit

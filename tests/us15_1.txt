@@ -1,0 +1,14 @@
+#####################################################################################
+# User Story 15 - Relatorios (teste de persistencia)
+#####################################################################################
+
+expect 8,00 getTotalFaturado dataInicial=1/1/2026 dataFinal=31/1/2026
+expect 56,00 getTotalFaturado dataInicial=1/1/2026 dataFinal=31/12/2026
+expect emAndamento getAtributoAluguel aluguel=A7 atributo=estado
+# a corrida em andamento antes do reinicio passa a contar quando e devolvida (30 min = 15,00)
+devolverBicicleta aluguel=A7 estacao=E2 data="5/5/2026 08:30"
+expect 15,00 getTotalFaturado dataInicial=1/5/2026 dataFinal=31/5/2026
+expect 71,00 getTotalFaturado dataInicial=1/1/2026 dataFinal=31/12/2026
+
+encerrarSistema
+quit

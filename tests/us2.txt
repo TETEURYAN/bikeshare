@@ -34,5 +34,43 @@ expectError "Usuario nao existe." getAtributoUsuario usuario=U999 atributo=nome
 expectError "Atributo nao existe." getAtributoUsuario usuario=${id1} atributo=inexistente
 expectError "Atributo nao existe." getAtributoUsuario usuario=${id1} atributo=""
 
+# ---- (refatorado) consulta dos atributos de uma pessoa juridica (cada usuario tem os seus) ----
+expect "Loja Bikes ME" getAtributoUsuario usuario=${id2} atributo=nome
+expect loja@exemplo.com getAtributoUsuario usuario=${id2} atributo=email
+expect 654321 getAtributoUsuario usuario=${id2} atributo=senha
+expect ativo getAtributoUsuario usuario=${id2} atributo=estado
+expect nenhum getAtributoUsuario usuario=${id2} atributo=aluguelAtivo
+expect 0,00 getAtributoUsuario usuario=${id2} atributo=totalPendencias
+expect nenhum getAtributoUsuario usuario=${id2} atributo=metodoPagamento
+
+# ---- (refatorado) validade do cartao tambem erra enquanto nao ha metodo de pagamento ----
+expectError "Usuario nao usa cartao." getAtributoUsuario usuario=${id1} atributo=validadeCartao
+expectError "Usuario nao usa cartao." getAtributoUsuario usuario=${id2} atributo=numeroCartao
+
+# ---- (refatorado) dois usuarios com o mesmo nome: a busca por email distingue ----
+id3=criarUsuario nome="Joana Prado" email="joana2@exemplo.com" senha="111111" tipo=pessoaFisica cpf=100.200.300-41
+expectDifferent ${id1} echo ${id3}
+expect ${id3} getUsuarioPorEmail email=joana2@exemplo.com
+expect ${id1} getUsuarioPorEmail email=joana@exemplo.com
+expect 111111 getAtributoUsuario usuario=${id3} atributo=senha
+expect 123456 getAtributoUsuario usuario=${id1} atributo=senha
+
+# ---- (refatorado) busca por email ignora maiusculas/minusculas ----
+expect ${id1} getUsuarioPorEmail email=JOANA@exemplo.com
+expect ${id2} getUsuarioPorEmail email=Loja@Exemplo.com
+
+# ---- (refatorado) email so com espacos conta como vazio ----
+expectError "Email nao pode ser nulo." getUsuarioPorEmail email="   "
+
+# ---- (refatorado) atributo: so espacos e maiusculas/minusculas nao existem ----
+expectError "Atributo nao existe." getAtributoUsuario usuario=${id1} atributo="   "
+expectError "Atributo nao existe." getAtributoUsuario usuario=${id1} atributo=Nome
+expectError "Atributo nao existe." getAtributoUsuario usuario=${id1} atributo=EMAIL
+
+# ---- (refatorado) ordem das validacoes: usuario e conferido antes do atributo ----
+expectError "Identificacao do usuario nao pode ser nula." getAtributoUsuario usuario="" atributo=""
+expectError "Usuario nao existe." getAtributoUsuario usuario=U999 atributo=""
+expectError "Usuario nao existe." getAtributoUsuario usuario=U999 atributo=inexistente
+
 encerrarSistema
 quit

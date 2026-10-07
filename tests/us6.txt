@@ -55,5 +55,58 @@ expectError "Bicicleta nao existe." getAtributoBicicleta bicicleta=bx999 atribut
 expectError "Atributo nao existe." getAtributoBicicleta bicicleta=bc1 atributo=cor
 expectError "Bicicleta nao existe." getEstadoBicicleta bicicleta=bx999
 
+# ---- (refatorado) combinacoes de tipo e bateria ----
+expectError "Nivel de bateria nao pode ser nulo." adicionarBicicleta estacao=${estacao2} bicicleta=bx tipo=eletrica
+expectError "Bicicleta nao possui bateria." adicionarBicicleta estacao=${estacao2} bicicleta=bx tipo=convencional nivelBateria=50
+expectError "Bicicleta nao existe." getAtributoBicicleta bicicleta=bx atributo=tipo
+
+# ---- (refatorado) uma bicicleta removida pode ser cadastrada de novo com o mesmo identificador ----
+adicionarBicicleta estacao=${estacao2} bicicleta=bc4 tipo=convencional
+removerBicicleta estacao=${estacao2} bicicleta=bc4
+expectError "Bicicleta nao existe." getAtributoBicicleta bicicleta=bc4 atributo=tipo
+adicionarBicicleta estacao=${estacao2} bicicleta=bc4 tipo=convencional
+expect convencional getAtributoBicicleta bicicleta=bc4 atributo=tipo
+expect ${estacao2} getAtributoBicicleta bicicleta=bc4 atributo=estacao
+
+# ---- (refatorado) identificacoes so com espacos e estacao invalida na remocao ----
+expectError "Identificacao da estacao nao pode ser nula." adicionarBicicleta estacao="   " bicicleta=bx tipo=convencional
+expectError "Identificacao da bicicleta nao pode ser nula." adicionarBicicleta estacao=${estacao2} bicicleta="   " tipo=convencional
+expectError "Identificacao da bicicleta nao pode ser nula." getAtributoBicicleta bicicleta="   " atributo=tipo
+expectError "Identificacao da bicicleta nao pode ser nula." getEstadoBicicleta bicicleta=""
+expectError "Identificacao da estacao nao pode ser nula." removerBicicleta estacao="" bicicleta=bc4
+expectError "Estacao nao existe." removerBicicleta estacao=E999 bicicleta=bc4
+
+# ---- (refatorado) tipo diferencia maiusculas de minusculas ----
+expectError "Tipo invalido." adicionarBicicleta estacao=${estacao2} bicicleta=bx tipo=Convencional
+expectError "Tipo invalido." adicionarBicicleta estacao=${estacao2} bicicleta=bx tipo=ELETRICA nivelBateria=50
+
+# ---- (refatorado) bateria: 0 e 100 sao validos; decimal e so espacos nao ----
+adicionarBicicleta estacao=${estacao2} bicicleta=beVazia tipo=eletrica nivelBateria=0
+adicionarBicicleta estacao=${estacao2} bicicleta=beCheia tipo=eletrica nivelBateria=100
+expect 0 getAtributoBicicleta bicicleta=beVazia atributo=nivelBateria
+expect 100 getAtributoBicicleta bicicleta=beCheia atributo=nivelBateria
+expectError "Nivel de bateria deve ser numerico." adicionarBicicleta estacao=${estacao2} bicicleta=bx tipo=eletrica nivelBateria=50,5
+expectError "Nivel de bateria deve ser numerico." adicionarBicicleta estacao=${estacao2} bicicleta=bx tipo=eletrica nivelBateria=50.5
+expectError "Nivel de bateria nao pode ser nulo." adicionarBicicleta estacao=${estacao2} bicicleta=bx tipo=eletrica nivelBateria="   "
+
+# ---- (refatorado) ordem: dados da bicicleta sao validados antes da vaga (estacao1 esta cheia) ----
+expectError "Bicicleta ja existe." adicionarBicicleta estacao=${estacao1} bicicleta=bc1 tipo=convencional
+expectError "Tipo invalido." adicionarBicicleta estacao=${estacao1} bicicleta=bx tipo=eletrico
+expectError "Nivel de bateria deve estar entre 0 e 100." adicionarBicicleta estacao=${estacao1} bicicleta=bx tipo=eletrica nivelBateria=150
+expectError "Estacao sem vagas disponiveis." adicionarBicicleta estacao=${estacao1} bicicleta=bx tipo=eletrica nivelBateria=50
+
+# ---- (refatorado) atributos comuns tambem valem para a eletrica; atributo vazio ou com maiuscula ----
+expect disponivel getAtributoBicicleta bicicleta=be1 atributo=estado
+expect ${estacao1} getAtributoBicicleta bicicleta=be1 atributo=estacao
+expectError "Atributo nao existe." getAtributoBicicleta bicicleta=bc1 atributo=""
+expectError "Atributo nao existe." getAtributoBicicleta bicicleta=bc1 atributo=Tipo
+
+# ---- (refatorado) remover atualiza disponiveis e vagas (beVazia, com 0%, ocupa vaga mas nao conta) ----
+expect 2 getBicicletasDisponiveis estacao=${estacao2}
+expect 2 getVagasDisponiveis estacao=${estacao2}
+removerBicicleta estacao=${estacao2} bicicleta=beCheia
+expect 1 getBicicletasDisponiveis estacao=${estacao2}
+expect 3 getVagasDisponiveis estacao=${estacao2}
+
 encerrarSistema
 quit

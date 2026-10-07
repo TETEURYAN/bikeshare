@@ -1,0 +1,13 @@
+#####################################################################################
+# User Story 10 - Consulta de historico de alugueis (teste de persistencia)
+#####################################################################################
+
+expect 4 getHistoricoAlugueis usuario=U1
+expect 32,00 getHistoricoAlugueis usuario=U1 atributo=totalGasto
+expect 2 getHistoricoAlugueis usuario=U2 atributo=quantidade
+expect 0,00 getHistoricoAlugueis usuario=U2 atributo=totalGasto
+expect expirado getAtributoAluguel aluguel=A6 atributo=estado
+expectError "Usuario nao existe." getHistoricoAlugueis usuario=U3
+
+encerrarSistema
+quit
