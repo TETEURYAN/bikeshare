@@ -6,9 +6,9 @@
 
 zerarSistema
 
-estacao1=criarEstacao nome="Estacao Base" endereco="Rua Base, 1" capacidade=4
-estacao2=criarEstacao nome="Estacao Distante" endereco="Rua Distante, 2" capacidade=2
-estacaoEletrica=criarEstacao nome="Estacao Eletrica" endereco="Rua Volt, 3" capacidade=5
+estacao1=criarEstacao nome="Estação Arte Pajuçara" endereco="Avenida Dr. Antônio Gouveia, 1113" capacidade=4
+estacao2=criarEstacao nome="Estação Praça Centenário" endereco="Av. Tomás Espíndola" capacidade=2
+estacaoEletrica=criarEstacao nome="Estação Cascão Jatiúca" endereco="Av. Empresário Carlos da Silva Nogueira, 595" capacidade=5
 
 adicionarBicicleta estacao=${estacao1} bicicleta=r1 tipo=convencional
 adicionarBicicleta estacao=${estacao1} bicicleta=r2 tipo=convencional
@@ -99,7 +99,7 @@ a4=retirarBicicleta usuario=${usuario5} estacao=${estacao1} bicicleta=r2 data="1
 expect emAndamento getAtributoAluguel aluguel=${a4} atributo=estado
 
 # ---- estacao vazia: nenhuma bicicleta disponivel nela ----
-estacaoVazia=criarEstacao nome="Estacao Vazia" endereco="Rua Nova, 5" capacidade=2
+estacaoVazia=criarEstacao nome="Estação Del Popolo" endereco="Serraria" capacidade=2
 expectError "Bicicleta nao esta nesta estacao." retirarBicicleta usuario=${usuario3} estacao=${estacaoVazia} bicicleta=r2 data="10/3/2025 08:05"
 
 # ---- (refatorado) parametros so com espacos e formatos de data invalidos ----

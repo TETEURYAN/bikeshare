@@ -4,8 +4,8 @@
 
 zerarSistema
 
-estacao1=criarEstacao nome="Estacao Relatorio 1" endereco="Rua R1, 1" capacidade=4
-estacao2=criarEstacao nome="Estacao Relatorio 2" endereco="Rua R2, 2" capacidade=4
+estacao1=criarEstacao nome="Estação Praça Centenário" endereco="Av. Tomás Espíndola" capacidade=4
+estacao2=criarEstacao nome="Estação Cascão Jatiúca" endereco="Av. Empresário Carlos da Silva Nogueira, 595" capacidade=4
 adicionarBicicleta estacao=${estacao1} bicicleta=f1 tipo=convencional
 adicionarBicicleta estacao=${estacao1} bicicleta=f2 tipo=convencional
 

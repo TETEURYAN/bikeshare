@@ -4,8 +4,8 @@
 
 zerarSistema
 
-estacao1=criarEstacao nome="Estacao Leste" endereco="Av. Leste, 30" capacidade=5
-estacao2=criarEstacao nome="Estacao Oeste" endereco="Av. Oeste, 40" capacidade=5
+estacao1=criarEstacao nome="Estação Trem do Mel" endereco="Fernão Velho" capacidade=5
+estacao2=criarEstacao nome="Estação Arte Pajuçara" endereco="Avenida Dr. Antônio Gouveia, 1113" capacidade=5
 adicionarBicicleta estacao=${estacao1} bicicleta=p1 tipo=convencional
 
 usuario1=criarUsuario nome="Igor Barros" email="igor@exemplo.com" senha="123456" tipo=pessoaFisica cpf=500.600.700-80

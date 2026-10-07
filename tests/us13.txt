@@ -4,9 +4,9 @@
 
 zerarSistema
 
-estacao1=criarEstacao nome="Estacao Bloqueio 1" endereco="Rua B1, 1" capacidade=3
-estacao2=criarEstacao nome="Estacao Bloqueio 2" endereco="Rua B2, 2" capacidade=1
-estacaoVazia=criarEstacao nome="Estacao Vazia" endereco="Rua Vazia, 3" capacidade=2
+estacao1=criarEstacao nome="Estação HU da UFAL" endereco="Avenida Lourival Melo Mota" capacidade=3
+estacao2=criarEstacao nome="Estação Centro de Inovações do Jaraguá (CIPT)" endereco="Rua Melo Póvoas, 110" capacidade=1
+estacaoVazia=criarEstacao nome="Estação Mirante da Santa Amélia" endereco="Rua Ana Sampaio Lins, 108" capacidade=2
 
 adicionarBicicleta estacao=${estacao1} bicicleta=x1 tipo=convencional
 adicionarBicicleta estacao=${estacao1} bicicleta=x2 tipo=convencional

@@ -4,7 +4,7 @@
 
 zerarSistema
 
-estacao1=criarEstacao nome="Estacao Oficina" endereco="Rua da Oficina, 1" capacidade=3
+estacao1=criarEstacao nome="Estação Marco dos Corais" endereco="Praça Gogó da Ema, 485" capacidade=3
 adicionarBicicleta estacao=${estacao1} bicicleta=m1 tipo=convencional
 adicionarBicicleta estacao=${estacao1} bicicleta=m2 tipo=convencional
 
@@ -58,7 +58,7 @@ expectError "Identificacao da bicicleta nao pode ser nula." concluiManutencao bi
 expectError "Bicicleta nao existe." lancaDefeito bicicleta=m3 descricao="Pedal solto"
 expectError "Bicicleta nao existe." concluiManutencao bicicleta=m3
 
-estacao2=criarEstacao nome="Estacao Oficina 2" endereco="Rua da Oficina, 2" capacidade=4
+estacao2=criarEstacao nome="Estação Trem do Mel" endereco="Fernão Velho" capacidade=4
 usuario2=criarUsuario nome="Celia Prado" email="celia@exemplo.com" senha="123456" tipo=pessoaFisica cpf=100.900.800-71
 alterarUsuario usuario=${usuario2} atributo=metodoPagamento valor1=pix chave=celia@pix.com
 

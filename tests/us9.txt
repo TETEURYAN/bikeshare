@@ -4,8 +4,8 @@
 
 zerarSistema
 
-estacaoA=criarEstacao nome="Estacao A" endereco="Rua A, 1" capacidade=6
-estacaoB=criarEstacao nome="Estacao B" endereco="Rua B, 2" capacidade=6
+estacaoA=criarEstacao nome="Estação Del Popolo" endereco="Serraria" capacidade=6
+estacaoB=criarEstacao nome="Estação AlmaViva Benedito Bentes" endereco="Avenida Antônio Lisboa de Amorim" capacidade=6
 
 adicionarBicicleta estacao=${estacaoA} bicicleta=bc tipo=convencional
 adicionarBicicleta estacao=${estacaoA} bicicleta=be tipo=eletrica nivelBateria=80
@@ -73,7 +73,7 @@ expect inadimplente getAtributoUsuario usuario=${userAvulso} atributo=estado
 expect 10,00 getAtributoUsuario usuario=${userAvulso} atributo=totalPendencias
 
 # ---- devolucao recusada em estacao cheia (aluguel permanece em andamento) ----
-estacaoCheia=criarEstacao nome="Estacao Cheia" endereco="Rua C, 3" capacidade=1
+estacaoCheia=criarEstacao nome="Estação HU da UFAL" endereco="Avenida Lourival Melo Mota" capacidade=1
 adicionarBicicleta estacao=${estacaoCheia} bicicleta=ocupante tipo=convencional
 a9=retirarBicicleta usuario=${userAssinante} estacao=${estacaoA} bicicleta=bc5 data="5/6/2025 08:00"
 expectError "Estacao cheia." devolverBicicleta aluguel=${a9} estacao=${estacaoCheia} data="5/6/2025 08:20"
@@ -96,7 +96,7 @@ expectError "Data de devolucao anterior a data de retirada." devolverBicicleta a
 # =====================================================================================
 # (refatorado) casos de fronteira e combinacoes que nao eram cobertos
 # =====================================================================================
-estacaoC=criarEstacao nome="Estacao C" endereco="Rua C, 9" capacidade=6
+estacaoC=criarEstacao nome="Estação Centro de Inovações do Jaraguá (CIPT)" endereco="Rua Melo Póvoas, 110" capacidade=6
 adicionarBicicleta estacao=${estacaoC} bicicleta=bf1 tipo=convencional
 adicionarBicicleta estacao=${estacaoC} bicicleta=bf2 tipo=convencional
 adicionarBicicleta estacao=${estacaoC} bicicleta=bf3 tipo=convencional
@@ -181,8 +181,8 @@ expect finalizado getAtributoAluguel aluguel=${a17} atributo=estado
 # =====================================================================================
 # (refatorado) mais lacunas: parametros, heranca de Usuario/MetodoPagamento/Bicicleta e fronteiras
 # =====================================================================================
-estacaoD=criarEstacao nome="Estacao D" endereco="Rua D, 4" capacidade=6
-estacaoE=criarEstacao nome="Estacao E" endereco="Rua E, 5" capacidade=3
+estacaoD=criarEstacao nome="Estação Mirante da Santa Amélia" endereco="Rua Ana Sampaio Lins, 108" capacidade=6
+estacaoE=criarEstacao nome="Estação Marco dos Corais" endereco="Praça Gogó da Ema, 485" capacidade=3
 adicionarBicicleta estacao=${estacaoD} bicicleta=bd1 tipo=convencional
 adicionarBicicleta estacao=${estacaoD} bicicleta=bd2 tipo=convencional
 adicionarBicicleta estacao=${estacaoD} bicicleta=bdE tipo=eletrica nivelBateria=70

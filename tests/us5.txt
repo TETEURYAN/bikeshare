@@ -4,25 +4,25 @@
 
 zerarSistema
 
-id1=criarEstacao nome="Estacao Central" endereco="Praca da Se, 1" capacidade=10
+id1=criarEstacao nome="Estação Praça Centenário" endereco="Av. Tomás Espíndola" capacidade=10
 expect 10 getVagasDisponiveis estacao=${id1}
 expect 0 getBicicletasDisponiveis estacao=${id1}
 
-id2=criarEstacao nome="Estacao Sul" endereco="Av. Sul, 500" capacidade=5
+id2=criarEstacao nome="Estação Cascão Jatiúca" endereco="Av. Empresário Carlos da Silva Nogueira, 595" capacidade=5
 expectDifferent ${id1} echo ${id2}
 expect 5 getVagasDisponiveis estacao=${id2}
 
 # erros de validacao
-expectError "Nome nao pode ser nulo." criarEstacao nome="" endereco="Rua X, 1" capacidade=5
-expectError "Endereco nao pode ser nulo." criarEstacao nome="Estacao Y" endereco="" capacidade=5
-expectError "Capacidade nao pode ser nula." criarEstacao nome="Estacao Y" endereco="Rua X, 1" capacidade=""
-expectError "Capacidade deve ser numerica." criarEstacao nome="Estacao Y" endereco="Rua X, 1" capacidade=abc
-expectError "Capacidade deve ser numerica." criarEstacao nome="Estacao Y" endereco="Rua X, 1" capacidade=2,5
-expectError "Capacidade deve ser positiva." criarEstacao nome="Estacao Y" endereco="Rua X, 1" capacidade=0
-expectError "Capacidade deve ser positiva." criarEstacao nome="Estacao Y" endereco="Rua X, 1" capacidade=-3
+expectError "Nome nao pode ser nulo." criarEstacao nome="" endereco="Av. Empresário Carlos da Silva Nogueira, 595" capacidade=5
+expectError "Endereco nao pode ser nulo." criarEstacao nome="Estação AlmaViva Benedito Bentes" endereco="" capacidade=5
+expectError "Capacidade nao pode ser nula." criarEstacao nome="Estação AlmaViva Benedito Bentes" endereco="Avenida Antônio Lisboa de Amorim" capacidade=""
+expectError "Capacidade deve ser numerica." criarEstacao nome="Estação AlmaViva Benedito Bentes" endereco="Avenida Antônio Lisboa de Amorim" capacidade=abc
+expectError "Capacidade deve ser numerica." criarEstacao nome="Estação AlmaViva Benedito Bentes" endereco="Avenida Antônio Lisboa de Amorim" capacidade=2,5
+expectError "Capacidade deve ser positiva." criarEstacao nome="Estação AlmaViva Benedito Bentes" endereco="Avenida Antônio Lisboa de Amorim" capacidade=0
+expectError "Capacidade deve ser positiva." criarEstacao nome="Estação AlmaViva Benedito Bentes" endereco="Avenida Antônio Lisboa de Amorim" capacidade=-3
 
 # (refatorado) o identificador e quem distingue estacoes: nomes repetidos sao permitidos
-idRep=criarEstacao nome="Estacao Central" endereco="Outro lugar, 2" capacidade=3
+idRep=criarEstacao nome="Estação Praça Centenário" endereco="Avenida Lourival Melo Mota" capacidade=3
 expectDifferent ${id1} echo ${idRep}
 expect 3 getVagasDisponiveis estacao=${idRep}
 expect 10 getVagasDisponiveis estacao=${id1}
@@ -34,22 +34,22 @@ expectError "Identificacao da estacao nao pode ser nula." getBicicletasDisponive
 expectError "Estacao nao existe." getBicicletasDisponiveis estacao=E999
 
 # ---- (refatorado) campos so com espacos contam como vazios ----
-expectError "Nome nao pode ser nulo." criarEstacao nome="   " endereco="Rua X, 1" capacidade=5
-expectError "Endereco nao pode ser nulo." criarEstacao nome="Estacao Y" endereco="   " capacidade=5
-expectError "Capacidade nao pode ser nula." criarEstacao nome="Estacao Y" endereco="Rua X, 1" capacidade="   "
+expectError "Nome nao pode ser nulo." criarEstacao nome="   " endereco="Rua Melo Póvoas, 110" capacidade=5
+expectError "Endereco nao pode ser nulo." criarEstacao nome="Estação AlmaViva Benedito Bentes" endereco="   " capacidade=5
+expectError "Capacidade nao pode ser nula." criarEstacao nome="Estação AlmaViva Benedito Bentes" endereco="Avenida Antônio Lisboa de Amorim" capacidade="   "
 
 # ---- (refatorado) capacidade: so inteiros; decimal com ponto tambem e invalido ----
-expectError "Capacidade deve ser numerica." criarEstacao nome="Estacao Y" endereco="Rua X, 1" capacidade=5.0
-expectError "Capacidade deve ser numerica." criarEstacao nome="Estacao Y" endereco="Rua X, 1" capacidade=1e3
-expectError "Capacidade deve ser numerica." criarEstacao nome="Estacao Y" endereco="Rua X, 1" capacidade=cinco
+expectError "Capacidade deve ser numerica." criarEstacao nome="Estação AlmaViva Benedito Bentes" endereco="Avenida Antônio Lisboa de Amorim" capacidade=5.0
+expectError "Capacidade deve ser numerica." criarEstacao nome="Estação AlmaViva Benedito Bentes" endereco="Avenida Antônio Lisboa de Amorim" capacidade=1e3
+expectError "Capacidade deve ser numerica." criarEstacao nome="Estação AlmaViva Benedito Bentes" endereco="Avenida Antônio Lisboa de Amorim" capacidade=cinco
 
 # ---- (refatorado) ordem das validacoes: nome, endereco, capacidade ----
 expectError "Nome nao pode ser nulo." criarEstacao nome="" endereco="" capacidade=abc
-expectError "Endereco nao pode ser nulo." criarEstacao nome="Estacao Y" endereco="" capacidade=abc
-expectError "Capacidade nao pode ser nula." criarEstacao nome="Estacao Y" endereco="Rua X, 1" capacidade=""
+expectError "Endereco nao pode ser nulo." criarEstacao nome="Estação AlmaViva Benedito Bentes" endereco="" capacidade=abc
+expectError "Capacidade nao pode ser nula." criarEstacao nome="Estação AlmaViva Benedito Bentes" endereco="Avenida Antônio Lisboa de Amorim" capacidade=""
 
 # ---- (refatorado) capacidade minima (1) e valida ----
-idMin=criarEstacao nome="Estacao Minima" endereco="Beco, 1" capacidade=1
+idMin=criarEstacao nome="Estação Mirante da Santa Amélia" endereco="Rua Ana Sampaio Lins, 108" capacidade=1
 expect 1 getVagasDisponiveis estacao=${idMin}
 expect 0 getBicicletasDisponiveis estacao=${idMin}
 

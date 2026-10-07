@@ -4,8 +4,8 @@
 
 zerarSistema
 
-estacao1=criarEstacao nome="Estacao Parque" endereco="Av. do Parque, 20" capacidade=2
-estacao2=criarEstacao nome="Estacao Praia" endereco="Av. Beira Mar, 300" capacidade=5
+estacao1=criarEstacao nome="Estação AlmaViva Benedito Bentes" endereco="Avenida Antônio Lisboa de Amorim" capacidade=2
+estacao2=criarEstacao nome="Estação HU da UFAL" endereco="Avenida Lourival Melo Mota" capacidade=5
 
 # ---- convencional ----
 adicionarBicicleta estacao=${estacao1} bicicleta=bc1 tipo=convencional

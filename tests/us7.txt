@@ -7,7 +7,7 @@
 
 zerarSistema
 
-estacao1=criarEstacao nome="Estacao Universitaria" endereco="Av. Universitaria, 900" capacidade=4
+estacao1=criarEstacao nome="Estação Mirante da Santa Amélia" endereco="Rua Ana Sampaio Lins, 108" capacidade=4
 expect 0 getBicicletasDisponiveis estacao=${estacao1}
 expect 4 getVagasDisponiveis estacao=${estacao1}
 
@@ -25,7 +25,7 @@ expectError "Estacao sem vagas disponiveis." adicionarBicicleta estacao=${estaca
 
 # ---- (refatorado) heranca/polimorfismo: eletrica abaixo do nivel minimo (15%) ocupa vaga
 # ---- mas nao conta como disponivel; convencional nao tem essa restricao ----
-estacao2=criarEstacao nome="Estacao Eletrica" endereco="Av. Eletrica, 15" capacidade=5
+estacao2=criarEstacao nome="Estação Marco dos Corais" endereco="Praça Gogó da Ema, 485" capacidade=5
 adicionarBicicleta estacao=${estacao2} bicicleta=bePouca tipo=eletrica nivelBateria=10
 adicionarBicicleta estacao=${estacao2} bicicleta=beQuase tipo=eletrica nivelBateria=14
 expect 0 getBicicletasDisponiveis estacao=${estacao2}
@@ -45,7 +45,7 @@ expect 3 getBicicletasDisponiveis estacao=${estacao1}
 expect 1 getVagasDisponiveis estacao=${estacao1}
 
 # ---- (refatorado) cada estacao tem a sua contagem ----
-estacao3=criarEstacao nome="Estacao Pequena" endereco="Rua Curta, 1" capacidade=2
+estacao3=criarEstacao nome="Estação Trem do Mel" endereco="Fernão Velho" capacidade=2
 expect 0 getBicicletasDisponiveis estacao=${estacao3}
 expect 2 getVagasDisponiveis estacao=${estacao3}
 adicionarBicicleta estacao=${estacao3} bicicleta=d5 tipo=convencional

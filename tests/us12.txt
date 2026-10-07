@@ -23,8 +23,8 @@ expectError "Mensalidade deve ser numerica." criarPlano nome=basico franquiaMinu
 expectError "Mensalidade deve ser nao-negativa." criarPlano nome=basico franquiaMinutos=30 valorMinutoExcedente=0,40 mensalidade=-1
 
 # ---- usando o plano customizado ----
-estacao1=criarEstacao nome="Estacao Premium 1" endereco="Rua Premium, 1" capacidade=5
-estacao2=criarEstacao nome="Estacao Premium 2" endereco="Rua Premium, 2" capacidade=5
+estacao1=criarEstacao nome="Estação Cascão Jatiúca" endereco="Av. Empresário Carlos da Silva Nogueira, 595" capacidade=5
+estacao2=criarEstacao nome="Estação Del Popolo" endereco="Serraria" capacidade=5
 adicionarBicicleta estacao=${estacao1} bicicleta=pp1 tipo=convencional
 
 usuario1=criarUsuario nome="Vitor Chagas" email="vitor@exemplo.com" senha="123456" tipo=pessoaFisica cpf=800.700.600-50

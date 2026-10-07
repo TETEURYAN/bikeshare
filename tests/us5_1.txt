@@ -11,7 +11,7 @@ expect 0 getBicicletasDisponiveis estacao=E4
 expectError "Estacao nao existe." getVagasDisponiveis estacao=E5
 
 # o contador de ids tambem sobrevive ao encerramento
-id5=criarEstacao nome="Estacao Pos-Reinicio" endereco="Rua Nova, 9" capacidade=2
+id5=criarEstacao nome="Estação Marco dos Corais" endereco="Praça Gogó da Ema, 485" capacidade=2
 expect E5 echo ${id5}
 expect 2 getVagasDisponiveis estacao=${id5}
 

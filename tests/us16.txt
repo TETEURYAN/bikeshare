@@ -11,7 +11,7 @@ id2=criarUsuario nome="Marina Alves" email="marina@exemplo.com" senha="123456" \
 removerUsuario usuario=${id1}
 alterarUsuario usuario=${id2} atributo=nome valor="Marina Nova"
 alterarUsuario usuario=${id2} atributo=metodoPagamento valor1=pix chave=marina@pix.com
-estacaoA=criarEstacao nome="Estacao Undo" endereco="Rua Undo, 1" capacidade=3
+estacaoA=criarEstacao nome="Estação AlmaViva Benedito Bentes" endereco="Avenida Antônio Lisboa de Amorim" capacidade=3
 adicionarBicicleta estacao=${estacaoA} bicicleta=bikeUndo tipo=convencional
 a1=retirarBicicleta usuario=${id2} estacao=${estacaoA} bicicleta=bikeUndo data="1/12/2025 08:00"
 devolverBicicleta aluguel=${a1} estacao=${estacaoA} data="1/12/2025 08:01"
