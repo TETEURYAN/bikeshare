@@ -93,5 +93,163 @@ expectError "Aluguel nao esta em andamento." devolverBicicleta aluguel=${a1} est
 a10=retirarBicicleta usuario=${userAssinante} estacao=${estacaoB} bicicleta=bc5 data="6/6/2025 08:00"
 expectError "Data de devolucao anterior a data de retirada." devolverBicicleta aluguel=${a10} estacao=${estacaoB} data="6/6/2025 07:00"
 
+# =====================================================================================
+# (refatorado) casos de fronteira e combinacoes que nao eram cobertos
+# =====================================================================================
+estacaoC=criarEstacao nome="Estacao C" endereco="Rua C, 9" capacidade=6
+adicionarBicicleta estacao=${estacaoC} bicicleta=bf1 tipo=convencional
+adicionarBicicleta estacao=${estacaoC} bicicleta=bf2 tipo=convencional
+adicionarBicicleta estacao=${estacaoC} bicicleta=bf3 tipo=convencional
+adicionarBicicleta estacao=${estacaoC} bicicleta=bef tipo=eletrica nivelBateria=90
+adicionarBicicleta estacao=${estacaoC} bicicleta=bef2 tipo=eletrica nivelBateria=90
+
+userBorda=criarUsuario nome="Quiteria Lopes" email="quiteria@exemplo.com" senha="123456" tipo=pessoaFisica cpf=300.300.400-50
+alterarUsuario usuario=${userBorda} atributo=metodoPagamento valor1=pix chave=quiteria@pix.com
+
+# ---- exatamente 24h (1440 min) ainda e uma corrida normal: 1440 * 0,50 = 720,00 ----
+a11=retirarBicicleta usuario=${userBorda} estacao=${estacaoC} bicicleta=bf1 data="10/6/2025 08:00"
+devolverBicicleta aluguel=${a11} estacao=${estacaoC} data="11/6/2025 08:00"
+expect finalizado getAtributoAluguel aluguel=${a11} atributo=estado
+expect 720,00 getAtributoAluguel aluguel=${a11} atributo=valorCobrado
+expect ativo getAtributoUsuario usuario=${userBorda} atributo=estado
+
+# ---- cancelamento so vale na MESMA estacao: em outra estacao, 2 min sao cobrados (2 * 0,50) ----
+a12=retirarBicicleta usuario=${userBorda} estacao=${estacaoC} bicicleta=bf2 data="12/6/2025 08:00"
+devolverBicicleta aluguel=${a12} estacao=${estacaoA} data="12/6/2025 08:02"
+expect finalizado getAtributoAluguel aluguel=${a12} atributo=estado
+expect 1,00 getAtributoAluguel aluguel=${a12} atributo=valorCobrado
+
+# ---- heranca/polimorfismo: eletrica cancelada na carencia nao paga nem o adicional ----
+a13=retirarBicicleta usuario=${userBorda} estacao=${estacaoC} bicicleta=bef data="13/6/2025 08:00"
+devolverBicicleta aluguel=${a13} estacao=${estacaoC} data="13/6/2025 08:02"
+expect cancelado getAtributoAluguel aluguel=${a13} atributo=estado
+expect 0,00 getAtributoAluguel aluguel=${a13} atributo=valorCobrado
+expect disponivel getEstadoBicicleta bicicleta=bef
+
+# ---- expiracao de eletrica em estacao cheia: a devolucao e recusada e o aluguel segue em andamento ----
+a14=retirarBicicleta usuario=${userBorda} estacao=${estacaoC} bicicleta=bef data="14/6/2025 08:00"
+expectError "Estacao cheia." devolverBicicleta aluguel=${a14} estacao=${estacaoCheia} data="15/6/2025 09:00"
+expect emAndamento getAtributoAluguel aluguel=${a14} atributo=estado
+expect ativo getAtributoUsuario usuario=${userBorda} atributo=estado
+# em estacao com vaga: expira, sem tarifa e sem adicional da eletrica, e a bicicleta vai para manutencao
+devolverBicicleta aluguel=${a14} estacao=${estacaoC} data="15/6/2025 09:00"
+expect expirado getAtributoAluguel aluguel=${a14} atributo=estado
+expect 0,00 getAtributoAluguel aluguel=${a14} atributo=valorCobrado
+expect emManutencao getEstadoBicicleta bicicleta=bef
+expect inadimplente getAtributoUsuario usuario=${userBorda} atributo=estado
+expect 10,00 getAtributoUsuario usuario=${userBorda} atributo=totalPendencias
+# o usuario inadimplente nao pode retirar de novo (por isso nao acumula duas penalidades de atraso)
+expectError "Usuario inadimplente." retirarBicicleta usuario=${userBorda} estacao=${estacaoC} bicicleta=bf3 data="15/6/2025 10:00"
+
+# ---- assinante com saldo pre-carregado: so franquia/excedente sao cobrados (a mensalidade nao) ----
+userSaldo=criarUsuario nome="Rodrigo Maia" email="rodrigo@exemplo.com" senha="123456" tipo=pessoaFisica cpf=400.400.500-60 plano=assinante mensalidade=40
+alterarUsuario usuario=${userSaldo} atributo=metodoPagamento valor1=saldoPreCarregado
+alterarUsuario usuario=${userSaldo} atributo=saldo valor=10
+
+a15=retirarBicicleta usuario=${userSaldo} estacao=${estacaoC} bicicleta=bf3 data="16/6/2025 08:00"
+devolverBicicleta aluguel=${a15} estacao=${estacaoC} data="16/6/2025 08:30"
+expect finalizado getAtributoAluguel aluguel=${a15} atributo=estado
+expect 0,00 getAtributoAluguel aluguel=${a15} atributo=valorCobrado
+expect 10,00 getAtributoUsuario usuario=${userSaldo} atributo=saldo
+expect 40,00 getAtributoUsuario usuario=${userSaldo} atributo=mensalidade
+
+# 120 min: (120 - 60) * 0,30 = 18,00, maior que o saldo de 10,00 -> devolucao recusada, aluguel segue em andamento
+a16=retirarBicicleta usuario=${userSaldo} estacao=${estacaoC} bicicleta=bf3 data="17/6/2025 08:00"
+expectError "Saldo insuficiente." devolverBicicleta aluguel=${a16} estacao=${estacaoC} data="17/6/2025 10:00"
+expect emAndamento getAtributoAluguel aluguel=${a16} atributo=estado
+expect 10,00 getAtributoUsuario usuario=${userSaldo} atributo=saldo
+expect ${a16} getAtributoUsuario usuario=${userSaldo} atributo=aluguelAtivo
+alterarUsuario usuario=${userSaldo} atributo=saldo valor=10
+devolverBicicleta aluguel=${a16} estacao=${estacaoC} data="17/6/2025 10:00"
+expect finalizado getAtributoAluguel aluguel=${a16} atributo=estado
+expect 18,00 getAtributoAluguel aluguel=${a16} atributo=valorCobrado
+expect 2,00 getAtributoUsuario usuario=${userSaldo} atributo=saldo
+expect nenhum getAtributoUsuario usuario=${userSaldo} atributo=aluguelAtivo
+
+# ---- (vindo do us4) usuario so pode ser removido depois de devolver a bicicleta ----
+adicionarBicicleta estacao=${estacaoC} bicicleta=bf4 tipo=convencional
+userRem=criarUsuario nome="Sueli Barros" email="sueli@exemplo.com" senha="123456" tipo=pessoaFisica cpf=500.500.600-70
+alterarUsuario usuario=${userRem} atributo=metodoPagamento valor1=pix chave=sueli@pix.com
+a17=retirarBicicleta usuario=${userRem} estacao=${estacaoC} bicicleta=bf4 data="18/6/2025 08:00"
+expectError "Nao e possivel remover usuario com aluguel em andamento." removerUsuario usuario=${userRem}
+devolverBicicleta aluguel=${a17} estacao=${estacaoC} data="18/6/2025 08:10"
+removerUsuario usuario=${userRem}
+expectError "Usuario nao existe." getAtributoUsuario usuario=${userRem} atributo=nome
+# o aluguel finalizado continua consultavel
+expect finalizado getAtributoAluguel aluguel=${a17} atributo=estado
+
+# =====================================================================================
+# (refatorado) mais lacunas: parametros, heranca de Usuario/MetodoPagamento/Bicicleta e fronteiras
+# =====================================================================================
+estacaoD=criarEstacao nome="Estacao D" endereco="Rua D, 4" capacidade=6
+estacaoE=criarEstacao nome="Estacao E" endereco="Rua E, 5" capacidade=3
+adicionarBicicleta estacao=${estacaoD} bicicleta=bd1 tipo=convencional
+adicionarBicicleta estacao=${estacaoD} bicicleta=bd2 tipo=convencional
+adicionarBicicleta estacao=${estacaoD} bicicleta=bdE tipo=eletrica nivelBateria=70
+
+userPJ=criarUsuario nome="Pedal Express Ltda" email="express@exemplo.com" senha="123456" \
+	tipo=pessoaJuridica cnpj=20.202.020/0001-20 razaoSocial="Pedal Express Ltda"
+alterarUsuario usuario=${userPJ} atributo=metodoPagamento valor1=pix chave=express@pix.com
+userCartao=criarUsuario nome="Silvia Matos" email="silvia@exemplo.com" senha="123456" tipo=pessoaFisica cpf=600.600.700-80
+alterarUsuario usuario=${userCartao} atributo=metodoPagamento valor1=cartao numero=9999-8888-7777-6666 validade=12/2030
+userExato=criarUsuario nome="Tales Rios" email="tales@exemplo.com" senha="123456" tipo=pessoaFisica cpf=700.700.800-90
+alterarUsuario usuario=${userExato} atributo=metodoPagamento valor1=saldoPreCarregado
+alterarUsuario usuario=${userExato} atributo=saldo valor=5
+userAssin2=criarUsuario nome="Ursula Pires" email="ursula@exemplo.com" senha="123456" tipo=pessoaFisica cpf=800.800.900-10 \
+	plano=assinante mensalidade=40
+alterarUsuario usuario=${userAssin2} atributo=metodoPagamento valor1=pix chave=ursula@pix.com
+
+# ---- parametros so com espacos e data sem horario (o aluguel segue em andamento) ----
+aD1=retirarBicicleta usuario=${userPJ} estacao=${estacaoD} bicicleta=bd1 data="20/6/2025 08:00"
+expectError "Identificacao do aluguel nao pode ser nula." devolverBicicleta aluguel="   " estacao=${estacaoD} data="20/6/2025 08:10"
+expectError "Identificacao da estacao nao pode ser nula." devolverBicicleta aluguel=${aD1} estacao="   " data="20/6/2025 08:10"
+expectError "Data nao pode ser nula." devolverBicicleta aluguel=${aD1} estacao=${estacaoD} data="   "
+expectError "Data invalida." devolverBicicleta aluguel=${aD1} estacao=${estacaoD} data="20/6/2025"
+expect emAndamento getAtributoAluguel aluguel=${aD1} atributo=estado
+
+# ---- heranca de Usuario: pessoa juridica paga exatamente o mesmo que pessoa fisica (10 min = 5,00) ----
+devolverBicicleta aluguel=${aD1} estacao=${estacaoD} data="20/6/2025 08:10"
+expect finalizado getAtributoAluguel aluguel=${aD1} atributo=estado
+expect 5,00 getAtributoAluguel aluguel=${aD1} atributo=valorCobrado
+expect ${estacaoD} getAtributoBicicleta bicicleta=bd1 atributo=estacao
+
+# ---- MetodoPagamento Cartao + eletrica avulsa: 20 * 0,50 + 20 * 0,20 = 14,00; a bicicleta muda de estacao ----
+aD2=retirarBicicleta usuario=${userCartao} estacao=${estacaoD} bicicleta=bdE data="21/6/2025 08:00"
+devolverBicicleta aluguel=${aD2} estacao=${estacaoE} data="21/6/2025 08:20"
+expect 14,00 getAtributoAluguel aluguel=${aD2} atributo=valorCobrado
+expect ${estacaoE} getAtributoBicicleta bicicleta=bdE atributo=estacao
+expect 2 getVagasDisponiveis estacao=${estacaoE}
+
+# ---- SaldoPreCarregado com saldo exatamente igual ao valor: aprova e zera; a proxima retirada e recusada ----
+aD3=retirarBicicleta usuario=${userExato} estacao=${estacaoD} bicicleta=bd2 data="22/6/2025 08:00"
+devolverBicicleta aluguel=${aD3} estacao=${estacaoD} data="22/6/2025 08:10"
+expect 5,00 getAtributoAluguel aluguel=${aD3} atributo=valorCobrado
+expect 0,00 getAtributoUsuario usuario=${userExato} atributo=saldo
+expectError "Saldo insuficiente." retirarBicicleta usuario=${userExato} estacao=${estacaoD} bicicleta=bd2 data="22/6/2025 09:00"
+
+# ---- 0 minuto em OUTRA estacao nao e cancelamento: finalizado, sem valor a pagar ----
+aD4=retirarBicicleta usuario=${userPJ} estacao=${estacaoD} bicicleta=bd1 data="23/6/2025 08:00"
+devolverBicicleta aluguel=${aD4} estacao=${estacaoE} data="23/6/2025 08:00"
+expect finalizado getAtributoAluguel aluguel=${aD4} atributo=estado
+expect 0,00 getAtributoAluguel aluguel=${aD4} atributo=valorCobrado
+
+# ---- polimorfismo de Bicicleta: o adicional da eletrica e cobrado mesmo dentro da franquia (30 * 0,20) ----
+aD5=retirarBicicleta usuario=${userAssin2} estacao=${estacaoE} bicicleta=bdE data="24/6/2025 08:00"
+devolverBicicleta aluguel=${aD5} estacao=${estacaoD} data="24/6/2025 08:30"
+expect 6,00 getAtributoAluguel aluguel=${aD5} atributo=valorCobrado
+
+# ---- alugueis cancelados e expirados nao podem ser devolvidos de novo ----
+expectError "Aluguel nao esta em andamento." devolverBicicleta aluguel=${a6} estacao=${estacaoD} data="2/6/2025 09:00"
+expectError "Aluguel nao esta em andamento." devolverBicicleta aluguel=${a8} estacao=${estacaoD} data="5/6/2025 09:00"
+
+# ---- fronteira exata da expiracao: 24h01 (1441 min) ja expira ----
+aD6=retirarBicicleta usuario=${userCartao} estacao=${estacaoD} bicicleta=bd2 data="25/6/2025 08:00"
+devolverBicicleta aluguel=${aD6} estacao=${estacaoD} data="26/6/2025 08:01"
+expect expirado getAtributoAluguel aluguel=${aD6} atributo=estado
+expect 0,00 getAtributoAluguel aluguel=${aD6} atributo=valorCobrado
+expect emManutencao getEstadoBicicleta bicicleta=bd2
+expect inadimplente getAtributoUsuario usuario=${userCartao} atributo=estado
+expect 10,00 getAtributoUsuario usuario=${userCartao} atributo=totalPendencias
+
 encerrarSistema
 quit

@@ -16,6 +16,9 @@ expect disponivel getEstadoBicicleta bicicleta=m1
 lancaDefeito bicicleta=m1 descricao="Selim quebrado"
 expect emManutencao getEstadoBicicleta bicicleta=m1
 expect 1 getBicicletasDisponiveis estacao=${estacao1}
+# (refatorado, vindo do us7) bicicleta em manutencao continua ocupando a vaga fisica
+expect 1 getVagasDisponiveis estacao=${estacao1}
+expect emManutencao getAtributoBicicleta bicicleta=m1 atributo=estado
 concluiManutencao bicicleta=m1
 expect disponivel getEstadoBicicleta bicicleta=m1
 expect 2 getBicicletasDisponiveis estacao=${estacao1}
@@ -38,6 +41,60 @@ expectError "Identificacao da bicicleta nao pode ser nula." concluiManutencao bi
 expectError "Bicicleta nao existe." concluiManutencao bicicleta=bx999
 expectError "Bicicleta nao esta em manutencao." concluiManutencao bicicleta=m1
 expectError "Bicicleta nao esta em manutencao." concluiManutencao bicicleta=m2
+
+# ---- (refatorado) so se remove bicicleta disponivel: em manutencao, primeiro conclui a manutencao ----
+adicionarBicicleta estacao=${estacao1} bicicleta=m3 tipo=convencional
+lancaDefeito bicicleta=m3 descricao="Roda empenada"
+expectError "Bicicleta nao esta disponivel." removerBicicleta estacao=${estacao1} bicicleta=m3
+expect emManutencao getEstadoBicicleta bicicleta=m3
+concluiManutencao bicicleta=m3
+removerBicicleta estacao=${estacao1} bicicleta=m3
+expectError "Bicicleta nao existe." getEstadoBicicleta bicicleta=m3
+
+# ---- (refatorado) campos so com espacos; bicicleta removida ----
+expectError "Descricao nao pode ser nula." lancaDefeito bicicleta=m1 descricao="   "
+expectError "Identificacao da bicicleta nao pode ser nula." lancaDefeito bicicleta="   " descricao="Pedal solto"
+expectError "Identificacao da bicicleta nao pode ser nula." concluiManutencao bicicleta="   "
+expectError "Bicicleta nao existe." lancaDefeito bicicleta=m3 descricao="Pedal solto"
+expectError "Bicicleta nao existe." concluiManutencao bicicleta=m3
+
+estacao2=criarEstacao nome="Estacao Oficina 2" endereco="Rua da Oficina, 2" capacidade=4
+usuario2=criarUsuario nome="Celia Prado" email="celia@exemplo.com" senha="123456" tipo=pessoaFisica cpf=100.900.800-71
+alterarUsuario usuario=${usuario2} atributo=metodoPagamento valor1=pix chave=celia@pix.com
+
+# ---- (refatorado) bicicleta devolvida volta a aceitar defeito; em manutencao nao pode ser retirada ----
+adicionarBicicleta estacao=${estacao1} bicicleta=mR tipo=convencional
+a2=retirarBicicleta usuario=${usuario2} estacao=${estacao1} bicicleta=mR data="2/11/2025 08:00"
+devolverBicicleta aluguel=${a2} estacao=${estacao1} data="2/11/2025 08:20"
+lancaDefeito bicicleta=mR descricao="Freio fraco"
+expect emManutencao getEstadoBicicleta bicicleta=mR
+expectError "Bicicleta nao esta disponivel." retirarBicicleta usuario=${usuario2} estacao=${estacao1} bicicleta=mR data="2/11/2025 09:00"
+expect 1 getBicicletasDisponiveis estacao=${estacao1}
+expect 1 getVagasDisponiveis estacao=${estacao1}
+
+# ---- (refatorado) eletrica: manutencao e bateria sao regras independentes ----
+adicionarBicicleta estacao=${estacao2} bicicleta=be10 tipo=eletrica nivelBateria=10
+lancaDefeito bicicleta=be10 descricao="Display apagado"
+expect emManutencao getEstadoBicicleta bicicleta=be10
+concluiManutencao bicicleta=be10
+expect disponivel getEstadoBicicleta bicicleta=be10
+expect 0 getBicicletasDisponiveis estacao=${estacao2}
+expectError "Nivel de bateria insuficiente." retirarBicicleta usuario=${usuario2} estacao=${estacao2} bicicleta=be10 data="2/11/2025 10:00"
+
+# ---- (refatorado) bicicleta que entrou em manutencao por expiracao (US9) volta a circular ----
+adicionarBicicleta estacao=${estacao2} bicicleta=mx tipo=convencional
+usuario3=criarUsuario nome="Davi Lins" email="davi@exemplo.com" senha="123456" tipo=pessoaFisica cpf=100.900.800-72
+alterarUsuario usuario=${usuario3} atributo=metodoPagamento valor1=pix chave=davi@pix.com
+a3=retirarBicicleta usuario=${usuario3} estacao=${estacao2} bicicleta=mx data="3/11/2025 08:00"
+devolverBicicleta aluguel=${a3} estacao=${estacao2} data="4/11/2025 08:01"
+expect expirado getAtributoAluguel aluguel=${a3} atributo=estado
+expect emManutencao getEstadoBicicleta bicicleta=mx
+expectError "Bicicleta ja esta em manutencao." lancaDefeito bicicleta=mx descricao="Revisao"
+concluiManutencao bicicleta=mx
+expect disponivel getEstadoBicicleta bicicleta=mx
+expect 1 getBicicletasDisponiveis estacao=${estacao2}
+a4=retirarBicicleta usuario=${usuario2} estacao=${estacao2} bicicleta=mx data="5/11/2025 08:00"
+expect emUso getEstadoBicicleta bicicleta=mx
 
 encerrarSistema
 quit

@@ -59,5 +59,56 @@ a2=retirarBicicleta usuario=${usuario2} estacao=${estacao1} bicicleta=x3 data="2
 expectError "Estacao cheia." devolverBicicleta aluguel=${a2} estacao=${estacao2} data="2/10/2025 09:10"
 expect emAndamento getAtributoAluguel aluguel=${a2} atributo=estado
 
+# ---- (refatorado) inadimplencia tem precedencia sobre "aluguel em andamento" ----
+# usuario2 tem a2 em andamento; ao receber uma penalidade passa a ser bloqueado para novas retiradas
+lancaPenalidade usuario=${usuario2} tipo=dano valor=20 motivo="Dano durante a corrida"
+expect inadimplente getAtributoUsuario usuario=${usuario2} atributo=estado
+expect 20,00 getAtributoUsuario usuario=${usuario2} atributo=totalPendencias
+expectError "Usuario inadimplente." retirarBicicleta usuario=${usuario2} estacao=${estacao1} bicicleta=x1 data="2/10/2025 09:20"
+
+# ---- (refatorado) usuario com penalidade pendente pode ser removido ----
+usuario4=criarUsuario nome="Zeca Lima" email="zeca@exemplo.com" senha="123456" tipo=pessoaFisica cpf=900.400.500-60
+lancaPenalidade usuario=${usuario4} tipo=usoIndevido valor=15 motivo="Uso fora do horario"
+expect inadimplente getAtributoUsuario usuario=${usuario4} atributo=estado
+removerUsuario usuario=${usuario4}
+expectError "Usuario nao existe." getAtributoUsuario usuario=${usuario4} atributo=nome
+
+# ---- (refatorado) inadimplencia so bloqueia NOVAS retiradas: a devolucao em andamento e aceita (25 min) ----
+devolverBicicleta aluguel=${a2} estacao=${estacaoVazia} data="2/10/2025 09:30"
+expect finalizado getAtributoAluguel aluguel=${a2} atributo=estado
+expect 12,50 getAtributoAluguel aluguel=${a2} atributo=valorCobrado
+expect inadimplente getAtributoUsuario usuario=${usuario2} atributo=estado
+expect nenhum getAtributoUsuario usuario=${usuario2} atributo=aluguelAtivo
+
+# ---- (refatorado) inadimplente continua podendo alterar seus dados ----
+alterarUsuario usuario=${usuario2} atributo=metodoPagamento valor1=cartao numero=1212-3434-5656-7878 validade=05/2029
+expect cartao getAtributoUsuario usuario=${usuario2} atributo=metodoPagamento
+
+# ---- (refatorado) valor decimal da penalidade ----
+lancaPenalidade usuario=${usuario2} tipo=usoIndevido valor=12,75 motivo="Estacionou na calcada"
+expect 32,75 getAtributoUsuario usuario=${usuario2} atributo=totalPendencias
+
+# ---- (refatorado) tipo diferencia maiusculas; campos so com espacos ----
+expectError "Tipo de penalidade invalido." lancaPenalidade usuario=${usuario1} tipo=Dano valor=10 motivo="Teste"
+expectError "Tipo de penalidade invalido." lancaPenalidade usuario=${usuario1} tipo="" valor=10 motivo="Teste"
+expectError "Valor nao pode ser nulo." lancaPenalidade usuario=${usuario1} tipo=dano valor="   " motivo="Teste"
+expectError "Motivo nao pode ser nulo." lancaPenalidade usuario=${usuario1} tipo=dano valor=10 motivo="   "
+expectError "Identificacao do usuario nao pode ser nula." lancaPenalidade usuario="   " tipo=dano valor=10 motivo="Teste"
+
+# ---- (refatorado) ordem: usuario, tipo, valor, motivo ----
+expectError "Usuario nao existe." lancaPenalidade usuario=U999 tipo=abc valor=abc motivo=""
+expectError "Tipo de penalidade invalido." lancaPenalidade usuario=${usuario1} tipo=abc valor=abc motivo=""
+expectError "Valor deve ser numerico." lancaPenalidade usuario=${usuario1} tipo=dano valor=abc motivo=""
+expect 75,00 getAtributoUsuario usuario=${usuario1} atributo=totalPendencias
+
+# ---- (refatorado) pessoa juridica tambem fica inadimplente; o bloqueio vem antes da falta de metodo ----
+usuarioPJ=criarUsuario nome="Giro Ltda" email="giro@exemplo.com" senha="123456" \
+	tipo=pessoaJuridica cnpj=40.404.040/0001-40 razaoSocial="Giro Locacoes Ltda"
+expect ativo getAtributoUsuario usuario=${usuarioPJ} atributo=estado
+lancaPenalidade usuario=${usuarioPJ} tipo=dano valor=40 motivo="Cesto amassado"
+expect inadimplente getAtributoUsuario usuario=${usuarioPJ} atributo=estado
+expect 40,00 getAtributoUsuario usuario=${usuarioPJ} atributo=totalPendencias
+expectError "Usuario inadimplente." retirarBicicleta usuario=${usuarioPJ} estacao=${estacao1} bicicleta=x1 data="3/10/2025 08:00"
+
 encerrarSistema
 quit

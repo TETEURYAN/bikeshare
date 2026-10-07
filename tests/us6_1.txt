@@ -6,6 +6,16 @@ expect convencional getAtributoBicicleta bicicleta=bc1 atributo=tipo
 expect eletrica getAtributoBicicleta bicicleta=be1 atributo=tipo
 expect 80 getAtributoBicicleta bicicleta=be1 atributo=nivelBateria
 expectError "Bicicleta nao existe." getAtributoBicicleta bicicleta=bc3 atributo=tipo
+expect convencional getAtributoBicicleta bicicleta=bc4 atributo=tipo
+expect E2 getAtributoBicicleta bicicleta=bc4 atributo=estacao
+expect 0 getAtributoBicicleta bicicleta=beVazia atributo=nivelBateria
+expectError "Bicicleta nao existe." getAtributoBicicleta bicicleta=beCheia atributo=tipo
+expectError "Bicicleta nao possui bateria." getAtributoBicicleta bicicleta=bc4 atributo=nivelBateria
+expect 1 getBicicletasDisponiveis estacao=E2
+expect 3 getVagasDisponiveis estacao=E2
+# bicicleta removida antes do reinicio pode ser cadastrada de novo
+adicionarBicicleta estacao=E2 bicicleta=bc3 tipo=convencional
+expect E2 getAtributoBicicleta bicicleta=bc3 atributo=estacao
 
 encerrarSistema
 quit

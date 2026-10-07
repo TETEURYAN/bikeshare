@@ -1,0 +1,18 @@
+#####################################################################################
+# User Story 13 - Regras de bloqueio (teste de persistencia)
+#####################################################################################
+
+expect inadimplente getAtributoUsuario usuario=U1 atributo=estado
+expect 75,00 getAtributoUsuario usuario=U1 atributo=totalPendencias
+expect 32,75 getAtributoUsuario usuario=U2 atributo=totalPendencias
+expect cartao getAtributoUsuario usuario=U2 atributo=metodoPagamento
+expect finalizado getAtributoAluguel aluguel=A2 atributo=estado
+expectError "Usuario nao existe." getAtributoUsuario usuario=U3 atributo=nome
+expect inadimplente getAtributoUsuario usuario=U4 atributo=estado
+expect 40,00 getAtributoUsuario usuario=U4 atributo=totalPendencias
+expect emManutencao getEstadoBicicleta bicicleta=x2
+# o bloqueio continua valendo depois do reinicio
+expectError "Usuario inadimplente." retirarBicicleta usuario=U2 estacao=E3 bicicleta=x3 data="3/10/2025 08:00"
+
+encerrarSistema
+quit

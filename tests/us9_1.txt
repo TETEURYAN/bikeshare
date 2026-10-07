@@ -9,6 +9,20 @@ expect expirado getAtributoAluguel aluguel=A8 atributo=estado
 expect emManutencao getEstadoBicicleta bicicleta=bc4
 expect inadimplente getAtributoUsuario usuario=U1 atributo=estado
 expect 10,00 getAtributoUsuario usuario=U1 atributo=totalPendencias
+expect 720,00 getAtributoAluguel aluguel=A11 atributo=valorCobrado
+expect cancelado getAtributoAluguel aluguel=A13 atributo=estado
+expect expirado getAtributoAluguel aluguel=A14 atributo=estado
+expect 18,00 getAtributoAluguel aluguel=A16 atributo=valorCobrado
+expect 2,00 getAtributoUsuario usuario=U4 atributo=saldo
+expect inadimplente getAtributoUsuario usuario=U3 atributo=estado
+expectError "Usuario nao existe." getAtributoUsuario usuario=U5 atributo=nome
+expect finalizado getAtributoAluguel aluguel=A17 atributo=estado
+expect 14,00 getAtributoAluguel aluguel=A19 atributo=valorCobrado
+expect 0,00 getAtributoUsuario usuario=U8 atributo=saldo
+expect 6,00 getAtributoAluguel aluguel=A22 atributo=valorCobrado
+expect expirado getAtributoAluguel aluguel=A23 atributo=estado
+expect inadimplente getAtributoUsuario usuario=U7 atributo=estado
+expect emManutencao getEstadoBicicleta bicicleta=bd2
 
 encerrarSistema
 quit

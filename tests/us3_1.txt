@@ -7,7 +7,17 @@ expect pedroh@exemplo.com getAtributoUsuario usuario=U1 atributo=email
 expect novaSenha1 getAtributoUsuario usuario=U1 atributo=senha
 expect avulso getAtributoUsuario usuario=U1 atributo=plano
 expect saldoPreCarregado getAtributoUsuario usuario=U1 atributo=metodoPagamento
-expect 95,00 getAtributoUsuario usuario=U1 atributo=saldo
+expect 175,50 getAtributoUsuario usuario=U1 atributo=saldo
+expect cartao getAtributoUsuario usuario=U2 atributo=metodoPagamento
+expect 5555-6666-7777-8888 getAtributoUsuario usuario=U2 atributo=numeroCartao
+expect saldoPreCarregado getAtributoUsuario usuario=U3 atributo=metodoPagamento
+expect 40,00 getAtributoUsuario usuario=U3 atributo=saldo
+expect "Cicla Brasil SA" getAtributoUsuario usuario=U4 atributo=nome
+expect brasil@cicla.com getAtributoUsuario usuario=U4 atributo=email
+expect 30,00 getAtributoUsuario usuario=U4 atributo=mensalidade
+expect U4 getUsuarioPorEmail email=brasil@cicla.com
+expect U6 getUsuarioPorEmail email=cicla@exemplo.com
+expect 30,00 getAtributoUsuario usuario=U5 atributo=mensalidade
 
 encerrarSistema
 quit

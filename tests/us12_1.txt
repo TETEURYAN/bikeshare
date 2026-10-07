@@ -7,5 +7,15 @@ expect 60,00 getAtributoUsuario usuario=U1 atributo=mensalidade
 expect 4,00 getAtributoAluguel aluguel=A2 atributo=valorCobrado
 expectError "Plano ja existe." criarPlano nome=premium franquiaMinutos=10 valorMinutoExcedente=0,10 mensalidade=10
 
+expect 6,00 getAtributoAluguel aluguel=A3 atributo=valorCobrado
+expect 12,00 getAtributoAluguel aluguel=A4 atributo=valorCobrado
+expect 2,50 getAtributoAluguel aluguel=A5 atributo=valorCobrado
+expect 0,00 getAtributoAluguel aluguel=A6 atributo=valorCobrado
+expect semFranquia getAtributoUsuario usuario=U2 atributo=plano
+expectError "Plano ja existe." criarPlano nome=livre franquiaMinutos=1 valorMinutoExcedente=1 mensalidade=1
+# planos customizados sobrevivem ao reinicio e continuam selecionaveis
+alterarUsuario usuario=U2 atributo=plano valor=livre
+expect 99,90 getAtributoUsuario usuario=U2 atributo=mensalidade
+
 encerrarSistema
 quit

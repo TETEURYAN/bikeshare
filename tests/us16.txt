@@ -152,5 +152,45 @@ expectError "Nome nao pode ser nulo." criarUsuario nome="" email="x@x.com" senha
 undo
 expectError "Usuario nao existe." getAtributoUsuario usuario=${id3} atributo=nome
 
+# =====================================================================================
+# (refatorado) undo/redo de bicicletas e manutencao; consultas e comandos recusados fora do historico
+# =====================================================================================
+adicionarBicicleta estacao=${estacaoA} bicicleta=bikeU2 tipo=convencional
+lancaDefeito bicicleta=bikeU2 descricao="Raio quebrado"
+expect emManutencao getEstadoBicicleta bicicleta=bikeU2
+# consultas no meio nao entram no historico: o undo desfaz o lancaDefeito
+expect 1 getVagasDisponiveis estacao=${estacaoA}
+expect "Marina Nova" getAtributoUsuario usuario=${id2} atributo=nome
+undo
+expect disponivel getEstadoBicicleta bicicleta=bikeU2
+redo
+expect emManutencao getEstadoBicicleta bicicleta=bikeU2
+
+concluiManutencao bicicleta=bikeU2
+expect disponivel getEstadoBicicleta bicicleta=bikeU2
+undo
+expect emManutencao getEstadoBicicleta bicicleta=bikeU2
+redo
+expect disponivel getEstadoBicicleta bicicleta=bikeU2
+
+removerBicicleta estacao=${estacaoA} bicicleta=bikeU2
+expectError "Bicicleta nao existe." getEstadoBicicleta bicicleta=bikeU2
+undo
+expect disponivel getEstadoBicicleta bicicleta=bikeU2
+expect ${estacaoA} getAtributoBicicleta bicicleta=bikeU2 atributo=estacao
+
+# comandos recusados (retirada de inadimplente, alteracao invalida) nao entram no historico:
+# o proximo undo desfaz o ultimo comando BEM-SUCEDIDO ainda no historico (concluiManutencao)
+expectError "Usuario inadimplente." retirarBicicleta usuario=${id2} estacao=${estacaoA} bicicleta=bikeU2 data="2/12/2025 08:00"
+expectError "Atributo nao pode ser alterado." alterarUsuario usuario=${id2} atributo=idade valor=1
+undo
+expect emManutencao getEstadoBicicleta bicicleta=bikeU2
+# e o que foi desfeito pode ser refeito, na ordem
+redo
+expect disponivel getEstadoBicicleta bicicleta=bikeU2
+redo
+expectError "Bicicleta nao existe." getEstadoBicicleta bicicleta=bikeU2
+expectError "Nao ha comando a refazer." redo
+
 encerrarSistema
 quit

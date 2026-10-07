@@ -17,16 +17,50 @@ expectError "Usuario nao existe." removerUsuario usuario=${id2}
 expectError "Identificacao do usuario nao pode ser nula." removerUsuario usuario=""
 expectError "Usuario nao existe." removerUsuario usuario=U999
 
-# nao pode remover usuario com aluguel em andamento
-estacao1=criarEstacao nome="Estacao das Flores" endereco="Rua das Flores, 10" capacidade=3
-adicionarBicicleta estacao=${estacao1} bicicleta=bikeRem1 tipo=convencional
-alterarUsuario usuario=${id1} atributo=metodoPagamento valor1=pix chave=marcos@pix.com
-a1=retirarBicicleta usuario=${id1} estacao=${estacao1} bicicleta=bikeRem1 data="1/4/2025 09:00"
-expectError "Nao e possivel remover usuario com aluguel em andamento." removerUsuario usuario=${id1}
-
-devolverBicicleta aluguel=${a1} estacao=${estacao1} data="1/4/2025 09:01"
+# remocao de usuario sem historico
 removerUsuario usuario=${id1}
 expectError "Usuario nao existe." getAtributoUsuario usuario=${id1} atributo=nome
+
+# (refatorado) a regra "nao remover usuario com aluguel em andamento" depende de retirada/devolucao
+# e passou a ser testada em us8.txt e us9.txt
+
+# (refatorado) o email de um usuario removido deixa de existir e pode ser reutilizado
+expectError "Usuario nao existe." getUsuarioPorEmail email=marcos@exemplo.com
+expectError "Usuario nao existe." getUsuarioPorEmail email=julia@exemplo.com
+id4=criarUsuario nome="Julia Nova" email="julia@exemplo.com" senha="445566" tipo=pessoaFisica cpf=800.700.600-50
+expectDifferent ${id2} echo ${id4}
+expect ${id4} getUsuarioPorEmail email=julia@exemplo.com
+expect "Julia Nova" getAtributoUsuario usuario=${id4} atributo=nome
+
+# ---- (refatorado) identificacao so com espacos conta como vazia ----
+expectError "Identificacao do usuario nao pode ser nula." removerUsuario usuario="   "
+
+# ---- (refatorado) remover um usuario nao afeta os demais ----
+expect "Fernanda Melo" getAtributoUsuario usuario=${id3} atributo=nome
+expect fernanda@exemplo.com getAtributoUsuario usuario=${id3} atributo=email
+expect ativo getAtributoUsuario usuario=${id3} atributo=estado
+expect avulso getAtributoUsuario usuario=${id3} atributo=plano
+expect ${id3} getUsuarioPorEmail email=fernanda@exemplo.com
+
+# ---- (refatorado) usuario removido nao pode mais ser alterado ----
+expectError "Usuario nao existe." alterarUsuario usuario=${id1} atributo=nome valor="Fantasma"
+expectError "Usuario nao existe." alterarUsuario usuario=${id1} atributo=metodoPagamento valor1=pix chave=fantasma@pix.com
+expectError "Usuario nao existe." alterarUsuario usuario=${id1} atributo=metodoPagamento valor1=cartao numero=1111 validade=12/2028
+
+# ---- (refatorado) remocao de pessoa juridica assinante com metodo de pagamento ----
+id5=criarUsuario nome="Pedala Corp" email="pedala@exemplo.com" senha="778899" \
+	tipo=pessoaJuridica cnpj=88.888.888/0001-88 razaoSocial="Pedala Corporation" plano=assinante mensalidade=80
+alterarUsuario usuario=${id5} atributo=metodoPagamento valor1=saldoPreCarregado
+alterarUsuario usuario=${id5} atributo=saldo valor=30
+removerUsuario usuario=${id5}
+expectError "Usuario nao existe." getAtributoUsuario usuario=${id5} atributo=razaoSocial
+expectError "Usuario nao existe." getUsuarioPorEmail email=pedala@exemplo.com
+
+# ---- (refatorado) identificadores nao sao reaproveitados depois de remocoes ----
+expect U5 echo ${id5}
+id6=criarUsuario nome="Gil Prado" email="gil@exemplo.com" senha="123456" tipo=pessoaFisica cpf=111.000.222-33
+expect U6 echo ${id6}
+expectDifferent ${id5} echo ${id6}
 
 encerrarSistema
 quit

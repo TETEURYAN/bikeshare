@@ -46,5 +46,47 @@ expectError "Data invalida." getTotalFaturado dataInicial=31/2/2026 dataFinal=28
 expectError "Data invalida." getTotalFaturado dataInicial=1/1/2026 dataFinal=abc
 expectError "Data final anterior a data inicial." getTotalFaturado dataInicial=31/1/2026 dataFinal=1/1/2026
 
+# ---- (refatorado) datas so com espacos, com horario ou com mes inexistente ----
+expectError "Data nao pode ser nula." getTotalFaturado dataInicial="   " dataFinal=31/1/2026
+expectError "Data invalida." getTotalFaturado dataInicial="1/1/2026 08:00" dataFinal=31/1/2026
+expectError "Data invalida." getTotalFaturado dataInicial=1/13/2026 dataFinal=31/12/2026
+# a data inicial e validada antes da final
+expectError "Data invalida." getTotalFaturado dataInicial=abc dataFinal=""
+
+# ---- (refatorado) o faturamento conta pelo dia da DEVOLUCAO (quando a cobranca acontece) ----
+a5=retirarBicicleta usuario=${usuario1} estacao=${estacao1} bicicleta=f2 data="31/3/2026 23:50"
+devolverBicicleta aluguel=${a5} estacao=${estacao2} data="1/4/2026 00:10"
+expect 10,00 getAtributoAluguel aluguel=${a5} atributo=valorCobrado
+expect 0,00 getTotalFaturado dataInicial=31/3/2026 dataFinal=31/3/2026
+expect 10,00 getTotalFaturado dataInicial=1/4/2026 dataFinal=1/4/2026
+
+# ---- (refatorado) devolucao as 23:59 do dia final ainda entra no periodo ----
+a6=retirarBicicleta usuario=${usuario1} estacao=${estacao2} bicicleta=f2 data="30/4/2026 23:49"
+devolverBicicleta aluguel=${a6} estacao=${estacao1} data="30/4/2026 23:59"
+expect 5,00 getTotalFaturado dataInicial=30/4/2026 dataFinal=30/4/2026
+expect 15,00 getTotalFaturado dataInicial=1/4/2026 dataFinal=30/4/2026
+
+# ---- (refatorado) aluguel em andamento ainda nao foi cobrado: nao entra ----
+a7=retirarBicicleta usuario=${usuario1} estacao=${estacao1} bicicleta=f2 data="5/5/2026 08:00"
+expect 0,00 getTotalFaturado dataInicial=1/5/2026 dataFinal=31/5/2026
+
+# ---- (refatorado) varios usuarios, assinante e eletrica (90 min: 30 * 0,30 + 90 * 0,20 = 27,00) ----
+usuario2=criarUsuario nome="Heloisa Bento" email="heloisa@exemplo.com" senha="123456" tipo=pessoaFisica cpf=100.300.500-71 \
+	plano=assinante mensalidade=50
+alterarUsuario usuario=${usuario2} atributo=metodoPagamento valor1=pix chave=heloisa@pix.com
+adicionarBicicleta estacao=${estacao1} bicicleta=fE tipo=eletrica nivelBateria=90
+a8=retirarBicicleta usuario=${usuario2} estacao=${estacao1} bicicleta=fE data="10/6/2026 08:00"
+devolverBicicleta aluguel=${a8} estacao=${estacao2} data="10/6/2026 09:30"
+expect 27,00 getAtributoAluguel aluguel=${a8} atributo=valorCobrado
+usuario3=criarUsuario nome="Ciclo Entregas" email="ciclo@exemplo.com" senha="123456" \
+	tipo=pessoaJuridica cnpj=50.505.050/0001-50 razaoSocial="Ciclo Entregas Ltda"
+alterarUsuario usuario=${usuario3} atributo=metodoPagamento valor1=pix chave=ciclo@pix.com
+a9=retirarBicicleta usuario=${usuario3} estacao=${estacao2} bicicleta=f1 data="11/6/2026 08:00"
+devolverBicicleta aluguel=${a9} estacao=${estacao1} data="11/6/2026 08:04"
+expect 29,00 getTotalFaturado dataInicial=1/6/2026 dataFinal=30/6/2026
+
+# ---- (refatorado) total do ano: 12,00 + 15,00 + 29,00 ----
+expect 56,00 getTotalFaturado dataInicial=1/1/2026 dataFinal=31/12/2026
+
 encerrarSistema
 quit

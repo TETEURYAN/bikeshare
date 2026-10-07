@@ -4,8 +4,22 @@
 
 expect emAndamento getAtributoAluguel aluguel=A1 atributo=estado
 expect emUso getEstadoBicicleta bicicleta=r1
+expect nenhuma getAtributoBicicleta bicicleta=r1 atributo=estacao
 expect A1 getAtributoUsuario usuario=U1 atributo=aluguelAtivo
-expect inadimplente getAtributoUsuario usuario=U2 atributo=estado
+expect A2 getAtributoUsuario usuario=U2 atributo=aluguelAtivo
+expect ativo getAtributoUsuario usuario=U2 atributo=estado
+expect A4 getAtributoUsuario usuario=U5 atributo=aluguelAtivo
+expect 0 getBicicletasDisponiveis estacao=E3
+expect A5 getAtributoUsuario usuario=U6 atributo=aluguelAtivo
+expect "29/2/2024 7:05" getAtributoAluguel aluguel=A5 atributo=inicio
+expect U7 getAtributoAluguel aluguel=A6 atributo=usuario
+expectError "Bicicleta nao existe." getEstadoBicicleta bicicleta=r5
+
+# o contador de alugueis sobrevive ao encerramento (proximo aluguel: A7)
+adicionarBicicleta estacao=E2 bicicleta=r9 tipo=convencional
+alterarUsuario usuario=U4 atributo=metodoPagamento valor1=pix chave=fabio@pix.com
+a7=retirarBicicleta usuario=U4 estacao=E2 bicicleta=r9 data="11/3/2025 08:00"
+expect A7 echo ${a7}
 
 encerrarSistema
 quit

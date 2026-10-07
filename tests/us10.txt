@@ -38,5 +38,48 @@ expectError "Identificacao do usuario nao pode ser nula." getHistoricoAlugueis u
 expectError "Usuario nao existe." getHistoricoAlugueis usuario=U999
 expectError "Atributo nao existe." getHistoricoAlugueis usuario=${usuario1} atributo=inexistente
 
+# ---- (refatorado) identificacao so com espacos; atributo vazio ou com maiuscula ----
+expectError "Identificacao do usuario nao pode ser nula." getHistoricoAlugueis usuario="   "
+expectError "Atributo nao existe." getHistoricoAlugueis usuario=${usuario1} atributo=""
+expectError "Atributo nao existe." getHistoricoAlugueis usuario=${usuario1} atributo=Quantidade
+
+# ---- (refatorado) o historico de cada usuario e independente (assinante dentro da franquia: 0,00) ----
+usuario2=criarUsuario nome="Sergio Paiva" email="sergio@exemplo.com" senha="123456" tipo=pessoaFisica cpf=400.500.600-71 \
+	plano=assinante mensalidade=20
+alterarUsuario usuario=${usuario2} atributo=metodoPagamento valor1=pix chave=sergio@pix.com
+expect 0 getHistoricoAlugueis usuario=${usuario2}
+a4=retirarBicicleta usuario=${usuario2} estacao=${estacao1} bicicleta=h3 data="2/7/2025 08:00"
+devolverBicicleta aluguel=${a4} estacao=${estacao2} data="2/7/2025 08:30"
+expect 1 getHistoricoAlugueis usuario=${usuario2} atributo=quantidade
+expect 0,00 getHistoricoAlugueis usuario=${usuario2} atributo=totalGasto
+expect 3 getHistoricoAlugueis usuario=${usuario1} atributo=quantidade
+expect 25,00 getHistoricoAlugueis usuario=${usuario1} atributo=totalGasto
+
+# ---- (refatorado) o total gasto inclui o adicional da bicicleta eletrica (10 * 0,50 + 10 * 0,20) ----
+adicionarBicicleta estacao=${estacao1} bicicleta=hE tipo=eletrica nivelBateria=90
+a5=retirarBicicleta usuario=${usuario1} estacao=${estacao1} bicicleta=hE data="3/7/2025 08:00"
+devolverBicicleta aluguel=${a5} estacao=${estacao2} data="3/7/2025 08:10"
+expect 4 getHistoricoAlugueis usuario=${usuario1}
+expect 32,00 getHistoricoAlugueis usuario=${usuario1} atributo=totalGasto
+
+# ---- (refatorado) aluguel expirado entra na contagem, com valor 0,00 (como o cancelado) ----
+a6=retirarBicicleta usuario=${usuario2} estacao=${estacao2} bicicleta=h3 data="4/7/2025 08:00"
+devolverBicicleta aluguel=${a6} estacao=${estacao1} data="5/7/2025 08:01"
+expect expirado getAtributoAluguel aluguel=${a6} atributo=estado
+expect 2 getHistoricoAlugueis usuario=${usuario2} atributo=quantidade
+expect 0,00 getHistoricoAlugueis usuario=${usuario2} atributo=totalGasto
+
+# ---- (refatorado) usuario removido nao tem mais historico consultavel; o aluguel continua existindo ----
+usuario3=criarUsuario nome="Tania Reis" email="tania@exemplo.com" senha="123456" tipo=pessoaFisica cpf=400.500.600-72
+alterarUsuario usuario=${usuario3} atributo=metodoPagamento valor1=pix chave=tania@pix.com
+a7=retirarBicicleta usuario=${usuario3} estacao=${estacao1} bicicleta=h1 data="6/7/2025 08:00"
+devolverBicicleta aluguel=${a7} estacao=${estacao1} data="6/7/2025 08:05"
+expect 1 getHistoricoAlugueis usuario=${usuario3}
+removerUsuario usuario=${usuario3}
+expectError "Usuario nao existe." getHistoricoAlugueis usuario=${usuario3}
+expectError "Usuario nao existe." getHistoricoAlugueis usuario=${usuario3} atributo=totalGasto
+expect finalizado getAtributoAluguel aluguel=${a7} atributo=estado
+expect 2,50 getAtributoAluguel aluguel=${a7} atributo=valorCobrado
+
 encerrarSistema
 quit

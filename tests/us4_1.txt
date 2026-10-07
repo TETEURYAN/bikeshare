@@ -6,6 +6,18 @@ expectError "Usuario nao existe." getAtributoUsuario usuario=U1 atributo=nome
 expectError "Usuario nao existe." getAtributoUsuario usuario=U2 atributo=nome
 expect "Fernanda Melo" getAtributoUsuario usuario=U3 atributo=nome
 expect ativo getAtributoUsuario usuario=U3 atributo=estado
+expect "Julia Nova" getAtributoUsuario usuario=U4 atributo=nome
+expect U4 getUsuarioPorEmail email=julia@exemplo.com
+expect U3 getUsuarioPorEmail email=fernanda@exemplo.com
+expect "Gil Prado" getAtributoUsuario usuario=U6 atributo=nome
+expectError "Usuario nao existe." getAtributoUsuario usuario=U5 atributo=nome
+expectError "Usuario nao existe." getUsuarioPorEmail email=marcos@exemplo.com
+expectError "Usuario nao existe." getUsuarioPorEmail email=pedala@exemplo.com
+expectError "Usuario nao existe." alterarUsuario usuario=U1 atributo=nome valor="Fantasma"
+
+# o contador de ids tambem sobrevive ao encerramento: nenhum id removido e reutilizado
+id7=criarUsuario nome="Hugo Neri" email="hugo@exemplo.com" senha="123456" tipo=pessoaFisica cpf=222.000.333-44
+expect U7 echo ${id7}
 
 encerrarSistema
 quit
