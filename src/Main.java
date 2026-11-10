@@ -21,14 +21,18 @@ public class Main {
         EasyAccept.main(new String[]{facade, "tests/us9.txt"});
         EasyAccept.main(new String[]{facade, "tests/us9_1.txt"});
         EasyAccept.main(new String[]{facade, "tests/us10.txt"});
+        EasyAccept.main(new String[]{facade, "tests/us10_1.txt"});
         EasyAccept.main(new String[]{facade, "tests/us11.txt"});
         EasyAccept.main(new String[]{facade, "tests/us11_1.txt"});
         EasyAccept.main(new String[]{facade, "tests/us12.txt"});
         EasyAccept.main(new String[]{facade, "tests/us12_1.txt"});
         EasyAccept.main(new String[]{facade, "tests/us13.txt"});
+        EasyAccept.main(new String[]{facade, "tests/us13_1.txt"});
         EasyAccept.main(new String[]{facade, "tests/us14.txt"});
         EasyAccept.main(new String[]{facade, "tests/us14_1.txt"});
         EasyAccept.main(new String[]{facade, "tests/us15.txt"});
+        EasyAccept.main(new String[]{facade, "tests/us15_1.txt"});
         EasyAccept.main(new String[]{facade, "tests/us16.txt"});
+        EasyAccept.main(new String[]{facade, "tests/us16_1.txt"});
     }
 }
